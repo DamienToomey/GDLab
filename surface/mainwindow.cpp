@@ -22,23 +22,23 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_functionList->addItem(tr("Saddle"));
     m_functionList->addItem(tr("NonConvex"));
 
-    QLabel *fLabel = new QLabel("y = f(x, z) =");
+    QLabel *fLabel = new QLabel(tr("y = f(x, z) ="));
     m_fLineEdit = new QLineEdit(m_widget);
-    m_fLineEdit->setPlaceholderText(QStringLiteral(""));
     m_fLineEdit->setEnabled(true);
-
-    QLabel *dfdxLabel = new QLabel("df/dx =");
-    m_dfdxLineEdit = new QLineEdit(m_widget);
-    m_dfdxLineEdit->setPlaceholderText(QStringLiteral(""));
-    m_dfdxLineEdit->setEnabled(true);
-
-    QLabel *dfdzLabel = new QLabel("df/dz =");
-    m_dfdzLineEdit = new QLineEdit(m_widget);
-    m_dfdzLineEdit->setPlaceholderText(QStringLiteral(""));
-    m_dfdzLineEdit->setEnabled(true);
 
     m_computePartialDerivativesButton = new QPushButton(m_widget);
     m_computePartialDerivativesButton->setText(tr("Compute partial derivatives"));
+
+    QLabel *dfdxLabel = new QLabel(tr("df/dx ="));
+    m_dfdxLineEdit = new QLineEdit(m_widget);
+    m_dfdxLineEdit->setEnabled(true);
+
+    QLabel *dfdzLabel = new QLabel(tr("df/dz ="));
+    m_dfdzLineEdit = new QLineEdit(m_widget);
+    m_dfdzLineEdit->setEnabled(true);
+
+    m_runGDButton = new QPushButton(m_widget);
+    m_runGDButton->setText(tr("Run Gradient Descent"));
 
     QGroupBox *functionGroupBox = new QGroupBox(tr("Function"));
     QVBoxLayout *functionLayout = new QVBoxLayout;
@@ -56,6 +56,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     dfdzLayout->addWidget(dfdzLabel);
     dfdzLayout->addWidget(m_dfdzLineEdit);
     functionLayout->addLayout(dfdzLayout);
+    functionLayout->addWidget(m_runGDButton);
     functionGroupBox->setLayout(functionLayout);
 
     m_axisMinSliderX = new QSlider(Qt::Horizontal, m_widget);
@@ -185,7 +186,6 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_resetCameraButton->setText(tr("Reset view"));
 
     m_cameraPOVButton = new QPushButton(m_widget);
-    m_cameraPOVButton->setText(tr("POV", "Point of View"));
 
     QGridLayout *gridLayout = new QGridLayout;
 
@@ -212,10 +212,6 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     rotateYGroupBox->setLayout(rotateYHBox);
     gridLayout->addWidget(rotateYGroupBox, 1, 1);
     vLayout->addLayout(gridLayout);
-
-    m_runGDButton = new QPushButton(m_widget);
-    m_runGDButton->setText(tr("Run Gradient Descent"));
-    vLayout->addWidget(m_runGDButton);
 
     m_widget->show();
 
@@ -346,12 +342,13 @@ QVector3D MainWindow::selectedPoint()
 
 void MainWindow::runGradientDescent()
 {
-    qDebug() << pointIsSelected();
-    qDebug() << m_modifier->partialDerivarivesAreComputed();
     m_graph->removeCustomItems();
     if (pointIsSelected() && m_modifier->partialDerivarivesAreComputed()) {
         VanillaGradientDescent *vanillaGradientDescent = new VanillaGradientDescent(this);
         vanillaGradientDescent->run();
+    }
+    else {
+        QMessageBox::critical(this, tr("Error"), tr("Don't forget to compute partial derivatives AND to select a initialization point before running gradient descent"));
     }
 }
 

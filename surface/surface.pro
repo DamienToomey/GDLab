@@ -7,11 +7,13 @@ android|ios|winrt {
 }
 
 SOURCES += main.cpp \
+    gradientdescent.cpp \
            surfacegraph.cpp \
     mainwindow.cpp \
     vanillagradientdescent.cpp
 
 HEADERS += surfacegraph.h \
+    gradientdescent.h \
     mainwindow.h \
     tinycolormap.hpp \
     vanillagradientdescent.h

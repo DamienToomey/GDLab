@@ -16,6 +16,7 @@
 #include <QtGui/QScreen>
 #include <QDebug>
 #include <QtWidgets/QLineEdit>
+#include <QMessageBox>
 
 #include "surfacegraph.h"
 
@@ -24,7 +25,7 @@
 
 class SurfaceGraph; // forward declaration because of circular dependency between MainWindow and SurfaceGraph (https://stackoverflow.com/questions/625799/resolve-build-errors-due-to-circular-dependency-amongst-classes)
 
-class MainWindow : public QObject
+class MainWindow : public QWidget
 {
     Q_OBJECT
 

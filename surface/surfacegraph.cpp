@@ -449,7 +449,7 @@ void SurfaceGraph::changePresetCamera()
             break;
     }
 
-    m_mainWindow->cameraPOVButton()->setText(QString("POV (%1)").arg(cameraPreset()));
+    m_mainWindow->cameraPOVButton()->setText(QString(tr("POV", "Point of View"))+QString("(%1)").arg(cameraPreset()));
     m_mainWindow->updateSliders();
     m_cameraPreset++;
 }
@@ -500,16 +500,16 @@ void SurfaceGraph::changeCostFunction(int function)
 
     switch (function) {
         case MainWindow::InclinedTacoShell: {
-            arithmeticExpression = "500*x*x+500*z";
+            arithmeticExpression = "500*x**2+500*z";
             break;
         }
         case MainWindow::SqrtSin: {
-            QString R = "(sqrt(z * z + x * x) + 0.01)";
+            QString R = "(sqrt(z**2 + x**2) + 0.01)";
             arithmeticExpression = QString("(sin(%1) / %1 + 0.24) * 1.61").arg(R);
             break;
         }
         case MainWindow::Saddle: {
-            arithmeticExpression = "x * x - z * z";
+            arithmeticExpression = "x**2 - z**2";
             break;
         }
         case MainWindow::NonConvex: {
