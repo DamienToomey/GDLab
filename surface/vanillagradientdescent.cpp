@@ -2,6 +2,7 @@
 
 VanillaGradientDescent::VanillaGradientDescent(MainWindow *mainWindow, SurfaceGraph *modifier)
 {
+
     m_modifier = modifier;
     m_mainWindow = mainWindow;
     m_graph = m_modifier->graph();
@@ -31,7 +32,7 @@ void VanillaGradientDescent::plotPoint()
     QImage color = QImage(2, 2, QImage::Format_RGB32);
     color.fill(Qt::blue);
     QVector3D positionOne = QVector3D(m_xHat, m_cost, m_zHat);
-    QCustom3DItem *item = new QCustom3DItem("./sphere.obj", positionOne,
+    QCustom3DItem *item = new QCustom3DItem(":/sphere/sphere", positionOne,
                                             QVector3D(0.025f, 0.025f, 0.025f),
                                             QQuaternion::fromAxisAndAngle(0.0f, 0.0f, 0.0f, 0.0f),
                                             color);

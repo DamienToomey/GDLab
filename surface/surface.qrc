@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/maps">
-        <file alias="mountain">mountain.png</file>
+    <qresource prefix="/sphere">
+        <file alias="sphere">sphere.obj</file>
     </qresource>
 </RCC>

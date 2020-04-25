@@ -1,3 +1,7 @@
+# My excluded files
+surface/surface.pro.user
+build-surface-Desktop-*
+
 # Prerequisites
 *.d
 
