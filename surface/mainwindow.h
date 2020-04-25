@@ -45,6 +45,12 @@ public Q_SLOTS:
     void setSelectedPoint(QPoint selectedPoint);
     QVector3D selectedPoint();
     void runGradientDescent();
+    Q3DSurface* graph();
+    SurfaceGraph* modifier();
+    bool pointIsOnSurface(QPoint selectedPoint);
+    void setPointIsSelected(bool pointIsSelected);
+    bool pointIsSelected();
+    QPushButton* cameraPOVButton();
 
 private:
     Q3DSurface *m_graph;
@@ -71,6 +77,7 @@ private:
     QComboBox *m_surfaceList;
     QVector3D m_selectedPoint;
     QPushButton *m_runGDButton;
+    bool m_pointIsSelected = false;
 };
 
 #endif // MAINWINDOW_H

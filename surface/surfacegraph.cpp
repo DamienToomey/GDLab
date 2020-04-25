@@ -37,18 +37,29 @@ const int sampleCountZ = 50;
 const float sampleMin = -8.0f;
 const float sampleMax = 8.0f;
 
-SurfaceGraph::SurfaceGraph(Q3DSurface *surface, MainWindow *mainWindow)
-    : m_graph(surface),
-      m_originalXRotation(0.0f),
+SurfaceGraph::SurfaceGraph(MainWindow *mainWindow)
+    : m_originalXRotation(0.0f),
       m_originalYRotation(0.0f),
       m_originalZoomLevel(100.0f),
       m_cameraPreset(Q3DCamera::CameraPresetFrontLow),
       m_mainWindow(mainWindow)
 {
+    m_graph = mainWindow->graph();
     m_xRotation = m_originalXRotation;
     m_yRotation = m_originalYRotation;
     m_zoomLevel = m_originalZoomLevel;
 
+    customizeAxes();
+
+    m_proxy = new QSurfaceDataProxy();
+    m_series = new QSurface3DSeries(m_proxy);
+    m_series->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+    m_series->setFlatShadingEnabled(true);
+    m_graph->setShadowQuality(QAbstract3DGraph::ShadowQualityNone);
+}
+
+void SurfaceGraph::customizeAxes()
+{
     m_graph->setAxisX(new QValue3DAxis);
     m_graph->setAxisY(new QValue3DAxis);
     m_graph->setAxisZ(new QValue3DAxis);
@@ -63,19 +74,10 @@ SurfaceGraph::SurfaceGraph(Q3DSurface *surface, MainWindow *mainWindow)
     m_graph->axisX()->setLabelFormat("%.2f");
     m_graph->axisZ()->setLabelFormat("%.2f");
     m_graph->axisX()->setRange(sampleMin, sampleMax);
-    //m_graph->axisY()->setRange(0.0f, 2.0f);
     m_graph->axisZ()->setRange(sampleMin, sampleMax);
     m_graph->axisX()->setLabelAutoRotation(30);
     m_graph->axisY()->setLabelAutoRotation(90);
     m_graph->axisZ()->setLabelAutoRotation(30);
-
-    m_Proxy = new QSurfaceDataProxy();
-    m_Series = new QSurface3DSeries(m_Proxy);
-    m_Series->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-    m_Series->setFlatShadingEnabled(true);
-    m_graph->setShadowQuality(QAbstract3DGraph::ShadowQualityNone);
-    //fillProxy();
-    //m_arithmeticEngine.installExtensions(QJSEngine::AllExtensions);
 }
 
 SurfaceGraph::~SurfaceGraph()
@@ -83,7 +85,7 @@ SurfaceGraph::~SurfaceGraph()
     delete m_graph;
 }
 
-void SurfaceGraph::fillProxy(QJSValue arithmeticfunction)
+void SurfaceGraph::fillProxy(QJSValue costFunctionEngine)
 {
     float stepX = (sampleMax - sampleMin) / float(sampleCountX - 1);
     float stepZ = (sampleMax - sampleMin) / float(sampleCountZ - 1);
@@ -100,89 +102,79 @@ void SurfaceGraph::fillProxy(QJSValue arithmeticfunction)
             float x = qMin(sampleMax, (j * stepX + sampleMin));
             QJSValueList args;
             args << x << z;
-            float y = arithmeticfunction.call(args).toNumber();
+            float y = costFunctionEngine.call(args).toNumber();
             (*newRow)[index++].setPosition(QVector3D(x, y, z));
         }
         *dataArray << newRow;
     }
-
-    m_Proxy->resetArray(dataArray);
+    m_proxy->resetArray(dataArray);
 }
 
-QString SurfaceGraph::preprocessArithmeticExpression(QString arithmeticexpression)
+QString SurfaceGraph::formatArithmeticExpression(QString arithmeticExpression)
 {
-    // TO DO : log(x) does not work
+    return arithmeticExpression.toLower().simplified().remove(' ');
+}
 
-    // Example expression
-    // arithmeticexpression = "sin(x)+2*z*sin(cos(z))+tan(2)+x+log10(z)+logit(z)+xxtan(2)+amath(xxsin(z))+pi+e";
-
-    arithmeticexpression = arithmeticexpression.toLower().simplified().remove(' ');
-
-    m_originalArithmeticexpression = arithmeticexpression;
-
-    // The following line cannot do toUpper on \\1
-    //arithmeticexpression.replace(QRegularExpression("(\\b(?![xz])[a-z]+[0-9]*(?![\\(])\\b)"), "Math.\\1");
-    // https://www.qtcentre.org/threads/12178-QString-replace()-with-QRegExp-capture-modification
+QString SurfaceGraph::preprocessArithmeticExpression(QString arithmeticExpression)
+{
+    arithmeticExpression = formatArithmeticExpression(arithmeticExpression);
 
     QRegExp rx("(\\b(?![xz])[a-z]+[0-9]*(?![\\(])\\b)");
-    // \\b : full word
-    // (?![xz])[a-z] : all the letters between a and z without x and z
-    // (?![\\(]) : do not take into account substrings that finish with a parentheses (i.e tan(x), sin(h), ...)
-    // [0-9]* : for log10, ...
+    /**
+    =================================== Regular expression explanation ===================================
+    \\b : work on full words, not on substrings
+    (?![xz])[a-z] : all the letters between a and z without x and z
+    (?![\\(]) : do not take into account strings that finish with a parenthesis (e.g tan(x), sin(h), ...)
+    [0-9]* : for math functions that have numbers in their name (e.g log10, log2, ...)
+    ======================================================================================================
+    **/
     rx.setMinimal(true);
     int s = -1;
-    while((s = rx.indexIn(arithmeticexpression, s+1))>=0){
-      arithmeticexpression.replace(s, rx.cap(0).length(), QString("Math.")+rx.cap(1).toUpper());
+    while((s = rx.indexIn(arithmeticExpression, s+1))>=0){
+      arithmeticExpression.replace(s, rx.cap(0).length(), QString("Math.")+rx.cap(1).toUpper());
       s+= rx.cap(1).length();
     }
 
-    arithmeticexpression.replace(QRegExp("([a-z]+[0-9]*\\()"), "Math.\\1");
-    arithmeticexpression.replace("(-", "(-1*"); // exp(-x**2) does not work so I replace it with exp(-x**2)*
+    arithmeticExpression.replace(QRegExp("([a-z]+[0-9]*\\()"), "Math.\\1");
+    arithmeticExpression.replace("(-", "(-1*"); // exp(-x**2) does not work so I replace it with exp(-1*x**2)
+    return arithmeticExpression;
+}
 
-//    QJSEngine myEngine;
-//    QJSValue module = myEngine.importModule("./damienalgebra.mjs"); //
+QString SurfaceGraph::mathjsPowerSymbolToJavascriptPowerSymbol(QString arithmeticExpression)
+{
+    return arithmeticExpression.replace("^", "**");
+}
 
-//    if (module.isError())
-//        qDebug()
-//                << "Uncaught exception at line"
-//                << module.property("lineNumber").toInt()
-//                << module.property("fileName").toString()
-//                << ":" << module.toString();
+QString SurfaceGraph::javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeticExpression)
+{
+    return arithmeticExpression.replace("**", "^");
+}
 
-//    QJSValue sumFunction = module.property("somme"); //
-//    QJSValueList args;
-//    //args << "x^2+4" << "x";
-//    args << 2 << 3;
-//    QJSValue result = sumFunction.call(args);
-//    qDebug() << "hello " << result.toString();
-//    if (result.isError())
-//        qDebug()
-//                << "Uncaught exception at line"
-//                << result.property("lineNumber").toInt()
-//                << ":" << result.toString();
+QString SurfaceGraph::computePartialDerivative(char variable)
+{
+   QString dfdx = executeSystemCommand(QString("mathjs \"derivative('%1', '%2')\"").arg(
+                                       javascriptPowerSymbolToMathjsPowerSymbol(m_rawCostFunction),
+                                       QString(variable)));
+   dfdx = dfdx.trimmed();
+   dfdx = mathjsPowerSymbolToJavascriptPowerSymbol(dfdx);
+   dfdx = preprocessArithmeticExpression(dfdx);
+   return dfdx;
+}
 
-    qDebug() << arithmeticexpression;
-
-    // Install Qt 5.14.2
-    // https://wiki.qt.io/Install_Qt_5_on_Ubuntu
-    // qt-opensource-linux-x64-5.14.2.run : http://download.qt.io/official_releases/qt/5.14/5.14.2/
-    // Qt 5.14.2 -> Desktop gcc 64-bit -> Qt Data Visualization -> Developer and Designer Tools
-
-    return arithmeticexpression;
+void SurfaceGraph::setLineEditText(QLineEdit *lineEdit, QString text)
+{
+    lineEdit->setText(text);
+    lineEdit->setCursorPosition(0);
 }
 
 void SurfaceGraph::computePartialDerivatives()
 {
-    if (m_isArithmeticExpressionValid) {
-        QString temp = m_originalArithmeticexpression.replace("**", "^");
-        m_dfdx = executeSystemCommand(QString("mathjs \"derivative('%1','x')\"").arg(temp));
-        m_dfdz = executeSystemCommand(QString("mathjs \"derivative('%1','z')\"").arg(temp));
-        m_dfdx = m_dfdx.replace("^", "**").trimmed();
-        m_dfdz = m_dfdz.replace("^", "**").trimmed();
-        m_mainWindow->dfdxLineEdit()->setText(m_dfdx);
-        m_mainWindow->dfdxLineEdit()->setCursorPosition(0);
-        m_mainWindow->dfdzLineEdit()->setText(m_dfdz);
-        m_mainWindow->dfdzLineEdit()->setCursorPosition(0);
+    if (m_costFunctionIsValid) {
+        m_dfdx = computePartialDerivative('x');
+        setLineEditText(m_mainWindow->dfdxLineEdit(), m_dfdx);
+        m_dfdz = computePartialDerivative('z');
+        setLineEditText(m_mainWindow->dfdzLineEdit(), m_dfdz);
+        setPartialDerivarivesAreComputed(true);
     }
 }
 
@@ -197,29 +189,34 @@ QString SurfaceGraph::executeSystemCommand(QString cmd)
     stream = popen(cmd.toStdString().c_str(), "r");
     if (stream)
     {
-        while (!feof(stream))
-            if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+        while (!feof(stream)) {
+            if (fgets(buffer, max_buffer, stream) != NULL) {
+                data.append(buffer);
+            }
+        }
         pclose(stream);
     }
     return QString::fromStdString(data);
 }
 
-void SurfaceGraph::drawModel(QString arithmeticexpression)
+void SurfaceGraph::drawModel(QString arithmeticExpression)
 {
-    m_isArithmeticExpressionValid = true;
-    QJSValue arithmeticfunction = m_arithmeticEngine.evaluate(
-                QString("(function(x, z) { return %1 ; })").arg(preprocessArithmeticExpression(arithmeticexpression))
-                );
+    m_graph->removeCustomItems();
+    m_costFunctionIsValid = true;
+    setPartialDerivarivesAreComputed(false);
+    m_rawCostFunction = formatArithmeticExpression(arithmeticExpression);
+    m_costFunction = preprocessArithmeticExpression(arithmeticExpression);
+    QJSValue costFunctionEngine = m_arithmeticEngine.evaluate(
+                QString("(function(x, z) { return %1 ; })").arg(m_costFunction));
 
-    if (arithmeticfunction.isError()) {
+    if (costFunctionEngine.isError()) {
         qDebug() << "The expression is not valid";
-        m_isArithmeticExpressionValid = false;
+        m_costFunctionIsValid = false;
     }
     else {
-        m_costFunction = preprocessArithmeticExpression(arithmeticexpression);
         m_graph->axisY()->setAutoAdjustRange(true);
-        fillProxy(arithmeticfunction);
-        m_graph->addSeries(m_Series);
+        fillProxy(costFunctionEngine);
+        m_graph->addSeries(m_series);
         resetRange();
     }
 }
@@ -324,9 +321,6 @@ void SurfaceGraph::setColormap(tinycolormap::ColormapType colormap)
         const QColor color = tinycolormap::GetColor(i, colormap).ConvertToQColor();
         gr.setColorAt(i, color);
     }
-    // https://www.qtcentre.org/threads/14307-How-to-get-the-specified-position-s-QColor-in-QLinearGradient
-    // https://github.com/yuki-koyama/tinycolormap
-
     m_graph->seriesList().at(0)->setBaseGradient(gr);
     m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
 }
@@ -356,105 +350,108 @@ void SurfaceGraph::changePresetCamera()
     }
 
     switch (m_cameraPreset) {
-    case Q3DCamera::CameraPresetFrontLow: {
-        m_xRotation = 0.0f;
-        m_yRotation = 0.0f;
-        break;
+        case Q3DCamera::CameraPresetFrontLow: {
+            m_xRotation = 0.0f;
+            m_yRotation = 0.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetFront: {
+            m_xRotation = 0.0f;
+            m_yRotation = 22.5f;
+            break;
+        }
+        case Q3DCamera::CameraPresetFrontHigh: {
+            m_xRotation = 0.0f;
+            m_yRotation = 45.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetLeftLow: {
+            m_xRotation = 90.0f;
+            m_yRotation = 0.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetLeft: {
+            m_xRotation = 90.0f;
+            m_yRotation = 22.5f;
+            break;
+        }
+        case Q3DCamera::CameraPresetLeftHigh: {
+            m_xRotation = 90.0f;
+            m_yRotation = 45.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetRightLow: {
+            m_xRotation = -90.0f;
+            m_yRotation =0.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetRight: {
+            m_xRotation = -90.0f;
+            m_yRotation = 22.5f;
+            break;
+        }
+        case Q3DCamera::CameraPresetRightHigh: {
+            m_xRotation = -90.0f;
+            m_yRotation = 45.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetBehindLow: {
+            m_xRotation = 180.0f;
+            m_yRotation = 0.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetBehind: {
+            m_xRotation = 180.0f;
+            m_yRotation = 22.5f;
+            break;
+        }
+        case Q3DCamera::CameraPresetBehindHigh: {
+            m_xRotation = 180.0f;
+            m_yRotation = 45.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetIsometricLeft: {
+            m_xRotation = 45.0f;
+            m_yRotation = 22.5f;
+            break;
+        }
+        case Q3DCamera::CameraPresetIsometricLeftHigh: {
+            m_xRotation = 45.0f;
+            m_yRotation = 45.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetIsometricRight: {
+            m_xRotation = -45.0f;
+            m_yRotation = 22.5f;
+            break;
+        }
+        case Q3DCamera::CameraPresetIsometricRightHigh: {
+            m_xRotation = -45.0f;
+            m_yRotation = 45.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetDirectlyAbove: {
+            m_xRotation = 0.0f;
+            m_yRotation = 90.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetDirectlyAboveCW45: {
+            m_xRotation = -45.0f;
+            m_yRotation = 90.0f;
+            break;
+        }
+        case Q3DCamera::CameraPresetDirectlyAboveCCW45: {
+            m_xRotation = 45.0f;
+            m_yRotation = 90.0f;
+            break;
+        }
+        default:
+            break;
     }
-    case Q3DCamera::CameraPresetFront: {
-        m_xRotation = 0.0f;
-        m_yRotation = 22.5f;
-        break;
-    }
-    case Q3DCamera::CameraPresetFrontHigh: {
-        m_xRotation = 0.0f;
-        m_yRotation = 45.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetLeftLow: {
-        m_xRotation = 90.0f;
-        m_yRotation = 0.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetLeft: {
-        m_xRotation = 90.0f;
-        m_yRotation = 22.5f;
-        break;
-    }
-    case Q3DCamera::CameraPresetLeftHigh: {
-        m_xRotation = 90.0f;
-        m_yRotation = 45.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetRightLow: {
-        m_xRotation = -90.0f;
-        m_yRotation =0.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetRight: {
-        m_xRotation = -90.0f;
-        m_yRotation = 22.5f;
-        break;
-    }
-    case Q3DCamera::CameraPresetRightHigh: {
-        m_xRotation = -90.0f;
-        m_yRotation = 45.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetBehindLow: {
-        m_xRotation = 180.0f;
-        m_yRotation = 0.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetBehind: {
-        m_xRotation = 180.0f;
-        m_yRotation = 22.5f;
-        break;
-    }
-    case Q3DCamera::CameraPresetBehindHigh: {
-        m_xRotation = 180.0f;
-        m_yRotation = 45.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetIsometricLeft: {
-        m_xRotation = 45.0f;
-        m_yRotation = 22.5f;
-        break;
-    }
-    case Q3DCamera::CameraPresetIsometricLeftHigh: {
-        m_xRotation = 45.0f;
-        m_yRotation = 45.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetIsometricRight: {
-        m_xRotation = -45.0f;
-        m_yRotation = 22.5f;
-        break;
-    }
-    case Q3DCamera::CameraPresetIsometricRightHigh: {
-        m_xRotation = -45.0f;
-        m_yRotation = 45.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetDirectlyAbove: {
-        m_xRotation = 0.0f;
-        m_yRotation = 90.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetDirectlyAboveCW45: {
-        m_xRotation = -45.0f;
-        m_yRotation = 90.0f;
-        break;
-    }
-    case Q3DCamera::CameraPresetDirectlyAboveCCW45: {
-        m_xRotation = 45.0f;
-        m_yRotation = 90.0f;
-        break;
-    }
-    default:
-        m_cameraPreset = Q3DCamera::CameraPresetFrontLow;
-        break;
-    }
+
+    m_mainWindow->cameraPOVButton()->setText(QString("POV (%1)").arg(cameraPreset()));
+    m_mainWindow->updateSliders();
+    m_cameraPreset++;
 }
 
 float SurfaceGraph::originalXRotation()
@@ -492,142 +489,144 @@ int SurfaceGraph::cameraPreset()
     return m_cameraPreset;
 }
 
-void SurfaceGraph::setCameraPreset()
-{
-    m_cameraPreset++;
-}
+//void SurfaceGraph::setCameraPreset()
+//{
+//    m_cameraPreset++;
+//}
 
-void SurfaceGraph::changeFunction(int function)
+void SurfaceGraph::changeCostFunction(int function)
 {
-    QString arithmeticexpression;
+    QString arithmeticExpression;
 
     switch (function) {
-    case MainWindow::InclinedTacoShell: {
-        arithmeticexpression = "500*x*x+500*z";
-        break;
+        case MainWindow::InclinedTacoShell: {
+            arithmeticExpression = "500*x*x+500*z";
+            break;
+        }
+        case MainWindow::SqrtSin: {
+            QString R = "(sqrt(z * z + x * x) + 0.01)";
+            arithmeticExpression = QString("(sin(%1) / %1 + 0.24) * 1.61").arg(R);
+            break;
+        }
+        case MainWindow::Saddle: {
+            arithmeticExpression = "x * x - z * z";
+            break;
+        }
+        case MainWindow::NonConvex: {
+            arithmeticExpression = "3*exp(-(z+1)**2-x**2)*(x-1)**2-exp(-(x+1)**2-z**2)/3+exp(-x**2-z**2)*(10*x**3-2*x+10*z**5)"; //
+            // Function found here : https://fr.mathworks.com/help/symbolic/graphics.html
+            break;
+        }
+        default:
+            break;
     }
-    case MainWindow::SqrtSin: {
-        QString R = "(sqrt(z * z + x * x) + 0.01)";
-        arithmeticexpression = QString("(sin(%1) / %1 + 0.24) * 1.61").arg(R);
-        break;
-    }
-    case MainWindow::Saddle: {
-        arithmeticexpression = "x * x - z * z";
-        break;
-    }
-    case MainWindow::NonConvex: {
-        arithmeticexpression = "3*exp(-(z+1)**2-x**2)*(x-1)**2-exp(-(x+1)**2-z**2)/3+exp(-x**2-z**2)*(10*x**3-2*x+10*z**5)"; //
-        // https://fr.mathworks.com/help/symbolic/graphics.html
-        break;
-    }
-    default:
-        break;
-    }
-    m_mainWindow->fLineEdit()->setText(arithmeticexpression);
-    m_mainWindow->fLineEdit()->setCursorPosition(0);
-    drawModel(arithmeticexpression);
+    setLineEditText(m_mainWindow->fLineEdit(), arithmeticExpression);
+    setLineEditText(m_mainWindow->dfdxLineEdit(), "");
+    setLineEditText(m_mainWindow->dfdzLineEdit(), "");
+    drawModel(arithmeticExpression);
 }
 
 void SurfaceGraph::changeSelectionMode(int selectionMode)
 {
 
     switch (selectionMode) {
-    case MainWindow::HideSelection: {
-        toggleModeNone();
-        break;
-    }
-    case MainWindow::ShowSelection: {
-        toggleModeItem();
-        break;
-    }
-    case MainWindow::RowSlice: {
-        toggleModeSliceRow();
-        break;
-    }
-    case MainWindow::ColumnSlice: {
-        toggleModeSliceColumn();
-        break;
-    }
-    default:
-        break;
+        case MainWindow::HideSelection: {
+            toggleModeNone();
+            m_mainWindow->setPointIsSelected(false);
+            break;
+        }
+        case MainWindow::ShowSelection: {
+            toggleModeItem();
+            break;
+        }
+        case MainWindow::RowSlice: {
+            toggleModeSliceRow();
+            break;
+        }
+        case MainWindow::ColumnSlice: {
+            toggleModeSliceColumn();
+            break;
+        }
+        default:
+            break;
     }
 }
 
 void SurfaceGraph::changeColormap(int colormap)
 {
     switch (colormap) {
-    case 0: {
-        resetColormap();
-        break;
-    }
-    case 1: {
-        setColormap(tinycolormap::ColormapType::Heat);
-        break;
-    }
-    case 2: {
-        setColormap(tinycolormap::ColormapType::Jet);
-        break;
-    }
-    case 3: {
-        setColormap(tinycolormap::ColormapType::Hot);
-        break;
-    }
-    case 4: {
-        setColormap(tinycolormap::ColormapType::Gray);
-        break;
-    }
-    case 5: {
-        setColormap(tinycolormap::ColormapType::Magma);
-        break;
-    }
-    case 6: {
-        setColormap(tinycolormap::ColormapType::Inferno);
-        break;
-    }
-    case 7: {
-        setColormap(tinycolormap::ColormapType::Plasma);
-        break;
-    }
-    case 8: {
-        setColormap(tinycolormap::ColormapType::Viridis);
-        break;
-    }
-    case 9: {
-        setColormap(tinycolormap::ColormapType::Cividis);
-        break;
-    }
-    case 10: {
-        setColormap(tinycolormap::ColormapType::Github);
-        break;
-    }
-    default:
-        break;
+        case 0: {
+            resetColormap();
+            break;
+        }
+        case 1: {
+            setColormap(tinycolormap::ColormapType::Heat);
+            break;
+        }
+        case 2: {
+            setColormap(tinycolormap::ColormapType::Jet);
+            break;
+        }
+        case 3: {
+            setColormap(tinycolormap::ColormapType::Hot);
+            break;
+        }
+        case 4: {
+            setColormap(tinycolormap::ColormapType::Gray);
+            break;
+        }
+        case 5: {
+            setColormap(tinycolormap::ColormapType::Magma);
+            break;
+        }
+        case 6: {
+            setColormap(tinycolormap::ColormapType::Inferno);
+            break;
+        }
+        case 7: {
+            setColormap(tinycolormap::ColormapType::Plasma);
+            break;
+        }
+        case 8: {
+            setColormap(tinycolormap::ColormapType::Viridis);
+            break;
+        }
+        case 9: {
+            setColormap(tinycolormap::ColormapType::Cividis);
+            break;
+        }
+        case 10: {
+            setColormap(tinycolormap::ColormapType::Github);
+            break;
+        }
+        default:
+            break;
     }
 }
 
 void SurfaceGraph::changeSurface(int surface)
 {
     switch (surface) {
-    case 0: {
-        m_Series->setDrawMode(QSurface3DSeries::DrawWireframe);
-        break;
-    }
-    case 1: {
-        m_Series->setDrawMode(QSurface3DSeries::DrawSurface);
-        break;
-    }
-    case 2: {
-        m_Series->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
-        break;
-    }
-    default:
-        break;
+        case 0: {
+            m_series->setDrawMode(QSurface3DSeries::DrawWireframe);
+            break;
+        }
+        case 1: {
+            m_series->setDrawMode(QSurface3DSeries::DrawSurface);
+            break;
+        }
+        case 2: {
+            m_series->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
+            break;
+        }
+        default:
+            break;
     }
 }
 
 QSurface3DSeries* SurfaceGraph::series()
 {
-    return m_Series;
+    return m_series;
 }
 
 QString SurfaceGraph::costFunction()
@@ -650,32 +649,12 @@ Q3DSurface* SurfaceGraph::graph()
     return m_graph;
 }
 
-//    QObject::connect(m_modeNoneRB, &QRadioButton::toggled,
-//                     m_modifier, &SurfaceGraph::toggleModeNone);
-//    QObject::connect(m_modeItemRB,  &QRadioButton::toggled,
-//                     m_modifier, &SurfaceGraph::toggleModeItem);
-//    QObject::connect(m_modeSliceRowRB,  &QRadioButton::toggled,
-//                     m_modifier, &SurfaceGraph::toggleModeSliceRow);
-//    QObject::connect(m_modeSliceColumnRB,  &QRadioButton::toggled,
-//                     m_modifier, &SurfaceGraph::toggleModeSliceColumn);
+void SurfaceGraph::setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed)
+{
+    m_partialDerivarivesAreComputed = partialDerivarivesAreComputed;
+}
 
-// 3D Functions
-// http://euler.rene-grothmann.de/Programs/03%20-%203D%20Graphics.html
-
-
-// ################################################
-// ##### Cannot see under the surface problem #####
-// ################################################
-
-// Problem caused in function updateScene
-
-// When looking at the method updateScene in bars3drenderer.cpp and scatter3drenderer.cpp,
-// there is a line that sets minYRotation :
-// scene->activeCamera()->d_ptr->setMinYRotation(-90.0);
-// whereas there no line like that for surface3drenderer so the minYRotation is blocked at 0 for Q3DSurface
-// since Q3DCameraPrivate (in q3dcamera.cpp) is instanciated with m_minYRotation(0.0f)
-
-// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/bars3drenderer.cpp.html
-// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/scatter3drenderer.cpp.html
-// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/surface3drenderer.cpp.html
-// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/q3dcamera.cpp.html
+bool SurfaceGraph::partialDerivarivesAreComputed()
+{
+    return m_partialDerivarivesAreComputed;
+}

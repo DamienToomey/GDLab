@@ -5,7 +5,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
 {
     m_graph = graph;
     m_container = container;
-    m_modifier = new SurfaceGraph(m_graph, this);
+    m_modifier = new SurfaceGraph(this);
 
     m_widget = new QWidget;
     QHBoxLayout *hLayout = new QHBoxLayout(m_widget);
@@ -14,13 +14,13 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     hLayout->addLayout(vLayout);
     vLayout->setAlignment(Qt::AlignTop);
 
-    m_widget->setWindowTitle(QStringLiteral("Gradient Descent Visualization"));
+    m_widget->setWindowTitle(tr("GDLab"));
 
     m_functionList = new QComboBox(m_widget);
-    m_functionList->addItem(QStringLiteral("Inclined Taco Shell"));
-    m_functionList->addItem(QStringLiteral("Sqrt && Sin"));
-    m_functionList->addItem(QStringLiteral("Saddle"));
-    m_functionList->addItem(QStringLiteral("NonConvex"));
+    m_functionList->addItem(tr("Inclined Taco Shell"));
+    m_functionList->addItem(tr("Sqrt && Sin"));
+    m_functionList->addItem(tr("Saddle"));
+    m_functionList->addItem(tr("NonConvex"));
 
     QLabel *fLabel = new QLabel("y = f(x, z) =");
     m_fLineEdit = new QLineEdit(m_widget);
@@ -38,9 +38,9 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_dfdzLineEdit->setEnabled(true);
 
     m_computePartialDerivativesButton = new QPushButton(m_widget);
-    m_computePartialDerivativesButton->setText("Compute partial derivatives");
+    m_computePartialDerivativesButton->setText(tr("Compute partial derivatives"));
 
-    QGroupBox *functionGroupBox = new QGroupBox(QStringLiteral("Function"));
+    QGroupBox *functionGroupBox = new QGroupBox(tr("Function"));
     QVBoxLayout *functionLayout = new QVBoxLayout;
     functionLayout->addWidget(m_functionList);
     QHBoxLayout *fLayout = new QHBoxLayout;
@@ -76,16 +76,16 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_axisMaxSliderZ->setEnabled(true);
 
     m_themeList = new QComboBox(m_widget);
-    m_themeList->addItem(QStringLiteral("Qt"));
-    m_themeList->addItem(QStringLiteral("Primary Colors"));
-    m_themeList->addItem(QStringLiteral("Digia"));
-    m_themeList->addItem(QStringLiteral("Stone Moss"));
-    m_themeList->addItem(QStringLiteral("Army Blue"));
-    m_themeList->addItem(QStringLiteral("Retro"));
-    m_themeList->addItem(QStringLiteral("Ebony"));
-    m_themeList->addItem(QStringLiteral("Isabelle"));
+    m_themeList->addItem(tr("Qt"));
+    m_themeList->addItem(tr("Primary Colors"));
+    m_themeList->addItem(tr("Digia"));
+    m_themeList->addItem(tr("Stone Moss"));
+    m_themeList->addItem(tr("Army Blue"));
+    m_themeList->addItem(tr("Retro"));
+    m_themeList->addItem(tr("Ebony"));
+    m_themeList->addItem(tr("Isabelle"));
 
-    QGroupBox *themeGroupBox = new QGroupBox(QStringLiteral("Theme"));
+    QGroupBox *themeGroupBox = new QGroupBox(tr("Theme"));
 
     const int pixMapWidth = 250;
     const int pixMapHeight = 15;
@@ -98,7 +98,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     pmp.drawRect(0, 0, pixMapWidth, pixMapHeight);
 
     m_colormapList = new QComboBox(m_widget);
-    m_colormapList->addItem(QIcon(pm), QStringLiteral("Default"));
+    m_colormapList->addItem(QIcon(pm), tr("Default"));
 
     static map<tinycolormap::ColormapType, QString> colormap2string = {
        {tinycolormap::ColormapType::Heat, "Heat"},
@@ -130,9 +130,9 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
 
 
     m_surfaceList = new QComboBox(m_widget);
-    m_surfaceList->addItem(QStringLiteral("WireFrame"));
-    m_surfaceList->addItem(QStringLiteral("Surface"));
-    m_surfaceList->addItem(QStringLiteral("SurfaceAndWireframe"));
+    m_surfaceList->addItem(tr("WireFrame"));
+    m_surfaceList->addItem(tr("Surface"));
+    m_surfaceList->addItem(tr("SurfaceAndWireframe"));
 
     QVBoxLayout *themeLayout = new QVBoxLayout;
     themeLayout->addWidget(m_themeList);
@@ -140,25 +140,25 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     themeLayout->addWidget(m_surfaceList);
     themeGroupBox->setLayout(themeLayout);
 
-    QGroupBox *axisXRangeHBoxGroupBox = new QGroupBox(QStringLiteral("Column range (X slider)"));
+    QGroupBox *axisXRangeHBoxGroupBox = new QGroupBox(tr("Column range (X slider)"));
     QHBoxLayout *axisXRangeHBox = new QHBoxLayout;
     axisXRangeHBox->addWidget(m_axisMinSliderX);
     axisXRangeHBox->addWidget(m_axisMaxSliderX);
     axisXRangeHBoxGroupBox->setLayout(axisXRangeHBox);
 
-    QGroupBox *axisZRangeHBoxGroupBox = new QGroupBox(QStringLiteral("Row range (Z slider)"));
+    QGroupBox *axisZRangeHBoxGroupBox = new QGroupBox(tr("Row range (Z slider)"));
     QHBoxLayout *axisZRangeHBox = new QHBoxLayout;
     axisZRangeHBox->addWidget(m_axisMinSliderZ);
     axisZRangeHBox->addWidget(m_axisMaxSliderZ);
     axisZRangeHBoxGroupBox->setLayout(axisZRangeHBox);
 
     vLayout->addWidget(functionGroupBox);
-    vLayout->addWidget(new QLabel(QStringLiteral("Selection Mode")));
+    vLayout->addWidget(new QLabel(tr("Selection Mode")));
     m_selectionModeList = new QComboBox(m_widget);
-    m_selectionModeList->addItem(QStringLiteral("Hide Selection"));
-    m_selectionModeList->addItem(QStringLiteral("Show Selection"));
-    m_selectionModeList->addItem(QStringLiteral("Row Slice"));
-    m_selectionModeList->addItem(QStringLiteral("Column Slice"));
+    m_selectionModeList->addItem(tr("Hide Selection"));
+    m_selectionModeList->addItem(tr("Show Selection"));
+    m_selectionModeList->addItem(tr("Row Slice"));
+    m_selectionModeList->addItem(tr("Column Slice"));
     vLayout->addWidget(m_selectionModeList);
     vLayout->addWidget(axisXRangeHBoxGroupBox);
     vLayout->addWidget(axisZRangeHBoxGroupBox);
@@ -182,10 +182,10 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_zoomSlider->setMaximum(600);
 
     m_resetCameraButton = new QPushButton(m_widget);
-    m_resetCameraButton->setText(QStringLiteral("Reset view"));
+    m_resetCameraButton->setText(tr("Reset view"));
 
     m_cameraPOVButton = new QPushButton(m_widget);
-    m_cameraPOVButton->setText(QStringLiteral("POV")); // point of view
+    m_cameraPOVButton->setText(tr("POV", "Point of View"));
 
     QGridLayout *gridLayout = new QGridLayout;
 
@@ -194,19 +194,19 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     buttonsVBox->addWidget(m_resetCameraButton, 0, Qt::AlignTop);
     gridLayout->addLayout(buttonsVBox, 0, 0);
 
-    QGroupBox *zoomGroupBox = new QGroupBox(QStringLiteral("Zoom"));
+    QGroupBox *zoomGroupBox = new QGroupBox(tr("Zoom"));
     QHBoxLayout *zoomHBox = new QHBoxLayout;
     zoomHBox->addWidget(m_zoomSlider, 0, Qt::AlignTop);
     zoomGroupBox->setLayout(zoomHBox);
     gridLayout->addWidget(zoomGroupBox, 0, 1);
 
-    QGroupBox *rotateXGroupBox = new QGroupBox(QStringLiteral("Rotate horizontally"));
+    QGroupBox *rotateXGroupBox = new QGroupBox(tr("Rotate horizontally"));
     QHBoxLayout *rotateXHBox = new QHBoxLayout;
     rotateXHBox->addWidget(m_rotationSliderX, 0, Qt::AlignTop);
     rotateXGroupBox->setLayout(rotateXHBox);
     gridLayout->addWidget(rotateXGroupBox, 1, 0);
 
-    QGroupBox *rotateYGroupBox = new QGroupBox(QStringLiteral("Rotate vertically"));
+    QGroupBox *rotateYGroupBox = new QGroupBox(tr("Rotate vertically"));
     QHBoxLayout *rotateYHBox = new QHBoxLayout;
     rotateYHBox->addWidget(m_rotationSliderY, 0, Qt::AlignTop);
     rotateYGroupBox->setLayout(rotateYHBox);
@@ -214,7 +214,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     vLayout->addLayout(gridLayout);
 
     m_runGDButton = new QPushButton(m_widget);
-    m_runGDButton->setText(QStringLiteral("Run Gradient Descent"));
+    m_runGDButton->setText(tr("Run Gradient Descent"));
     vLayout->addWidget(m_runGDButton);
 
     m_widget->show();
@@ -236,12 +236,12 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     QObject::connect(m_zoomSlider, &QSlider::valueChanged, m_modifier, &SurfaceGraph::zoom);
     QObject::connect(m_resetCameraButton, SIGNAL(clicked()), this,
                      SLOT(resetCamera()));
-    QObject::connect(m_cameraPOVButton, SIGNAL(clicked()), this,
-                     SLOT(updateSliders()));
+    QObject::connect(m_cameraPOVButton, &QPushButton::pressed, m_modifier,
+                     &SurfaceGraph::changePresetCamera);
     QObject::connect(m_computePartialDerivativesButton, &QPushButton::pressed,
                      m_modifier, &SurfaceGraph::computePartialDerivatives);
     QObject::connect(m_functionList, SIGNAL(currentIndexChanged(int)),
-                     m_modifier, SLOT(changeFunction(int)));
+                     m_modifier, SLOT(changeCostFunction(int)));
     QObject::connect(m_selectionModeList, SIGNAL(currentIndexChanged(int)),
                      m_modifier, SLOT(changeSelectionMode(int)));
     QObject::connect(m_colormapList, SIGNAL(currentIndexChanged(int)),
@@ -274,10 +274,9 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_functionList->setCurrentIndex(1);
     m_selectionModeList->setCurrentIndex(1);
     m_themeList->setCurrentIndex(2);
-    updateSliders();
+    m_surfaceList->setCurrentIndex(2);
+    m_modifier->changePresetCamera();
     //widget->showMaximized();
-
-
 }
 
 void MainWindow::resetCamera()
@@ -289,11 +288,8 @@ void MainWindow::resetCamera()
 
 void MainWindow::updateSliders()
 {
-    m_modifier->changePresetCamera();
     m_rotationSliderX->setValue(m_modifier->xRotation());
     m_rotationSliderY->setValue(m_modifier->yRotation());
-    m_cameraPOVButton->setText(QStringLiteral("POV (%1)").arg(m_modifier->cameraPreset()));
-    m_modifier->setCameraPreset();
 }
 
 void MainWindow::updateXRotationSlider(float rotation)
@@ -326,9 +322,21 @@ QLineEdit* MainWindow::fLineEdit()
     return m_fLineEdit;
 }
 
+bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
+{
+    return selectedPoint != QPoint(-1,-1);
+}
+
 void MainWindow::setSelectedPoint(QPoint selectedPoint)
 {
-    m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
+    if (pointIsOnSurface(selectedPoint)) {
+        m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
+        setPointIsSelected(true);
+    }
+    else {
+        m_graph->removeCustomItems();
+        setPointIsSelected(false);
+    }
 }
 
 QVector3D MainWindow::selectedPoint()
@@ -338,6 +346,36 @@ QVector3D MainWindow::selectedPoint()
 
 void MainWindow::runGradientDescent()
 {
-    VanillaGradientDescent *vanillaGradientDescent = new VanillaGradientDescent(this, m_modifier);
-    vanillaGradientDescent->run();
+    qDebug() << pointIsSelected();
+    qDebug() << m_modifier->partialDerivarivesAreComputed();
+    m_graph->removeCustomItems();
+    if (pointIsSelected() && m_modifier->partialDerivarivesAreComputed()) {
+        VanillaGradientDescent *vanillaGradientDescent = new VanillaGradientDescent(this);
+        vanillaGradientDescent->run();
+    }
+}
+
+Q3DSurface* MainWindow::graph()
+{
+    return m_graph;
+}
+
+SurfaceGraph* MainWindow::modifier()
+{
+    return m_modifier;
+}
+
+void MainWindow::setPointIsSelected(bool pointIsSelected)
+{
+    m_pointIsSelected = pointIsSelected;
+}
+
+bool MainWindow::pointIsSelected()
+{
+    return m_pointIsSelected;
+}
+
+QPushButton* MainWindow::cameraPOVButton()
+{
+    return m_cameraPOVButton;
 }

@@ -1,7 +1,6 @@
 #ifndef VANILLAGRADIENTDESCENT_H
 #define VANILLAGRADIENTDESCENT_H
 
-#include "surfacegraph.h"
 #include "mainwindow.h"
 #include <QtDataVisualization/QCustom3DItem>
 
@@ -10,13 +9,14 @@
 class VanillaGradientDescent
 {
 public:
-    VanillaGradientDescent(MainWindow *mainWindow, SurfaceGraph *modifier);
+    VanillaGradientDescent(MainWindow *mainWindow);
     float run();
 
 private:
     float computeCostFunction(float xHat, float zHat);
     float computeDfdx(float xHat, float zHat);
     float computeDfdz(float xHat, float zHat);
+    void plotPoint();
     SurfaceGraph *m_modifier;
     float m_xHat;
     float m_zHat;
@@ -26,12 +26,11 @@ private:
     float m_lr;
     float m_tol;
     float m_cost;
-    QJSValue m_costEngine;
+    QJSValue m_costFunctionEngine;
     QJSValue m_dfdxEngine;
     QJSValue m_dfdzEngine;
     MainWindow *m_mainWindow;
     Q3DSurface *m_graph;
-    void plotPoint();
     QJSEngine m_engine;
 };
 

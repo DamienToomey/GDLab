@@ -47,6 +47,7 @@
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QCoreApplication>
+#include <QtWidgets/QLineEdit>
 
 #define TINYCOLORMAP_WITH_QT5
 #include "tinycolormap.hpp"
@@ -61,7 +62,7 @@ class SurfaceGraph : public QObject
     Q_OBJECT
 
 public:
-    explicit SurfaceGraph(Q3DSurface *surface, MainWindow *mainWindow);
+    explicit SurfaceGraph(MainWindow *mainWindow);
     ~SurfaceGraph();
 
     void enableSqrtSinModel(bool enable);
@@ -94,12 +95,12 @@ public:
     float yRotation();
     float zoomLevel();
     int cameraPreset();
-    void setCameraPreset();
+//    void setCameraPreset();
     void resetRange();
-    void drawModel(QString arithmeticexpression);
+    void drawModel(QString arithmeticExpression);
     void setAxisXRange(float min, float max);
     void setAxisZRange(float min, float max);
-    void fillProxy(QJSValue arithmeticfunction);
+    void fillProxy(QJSValue costFunctionEngine);
     QString executeSystemCommand(QString cmd);
     void computePartialDerivatives();
     void resetColormap();
@@ -108,20 +109,21 @@ public:
     QString costFunction();
     QString dfdx();
     QString dfdz();
+    void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
+    bool partialDerivarivesAreComputed();
 
 public Q_SLOTS:
     void changeTheme(int theme);
-    void changeFunction(int function);
+    void changeCostFunction(int function);
     void changeSelectionMode(int selectionMode);
     void changeColormap(int colormap);
     void changeSurface(int surface);
     Q3DSurface* graph();
-    QString preprocessArithmeticExpression(QString arithmeticexpression);
 
 private:
     Q3DSurface *m_graph;
-    QSurfaceDataProxy *m_Proxy;
-    QSurface3DSeries *m_Series;
+    QSurfaceDataProxy *m_proxy;
+    QSurface3DSeries *m_series;
 
     QSlider *m_axisMinSliderX;
     QSlider *m_axisMaxSliderX;
@@ -139,12 +141,22 @@ private:
     float m_originalZoomLevel;
     int m_cameraPreset;
     QJSEngine m_arithmeticEngine;
-    QString m_originalArithmeticexpression;
-    bool m_isArithmeticExpressionValid = false;
+    QString m_rawCostFunction;
+    bool m_costFunctionIsValid;
+    void setPointIsSelected(bool pointIsSelected);
     QString m_dfdx;
     QString m_dfdz;
     MainWindow *m_mainWindow;
     QString m_costFunction;
+    QString preprocessArithmeticExpression(QString arithmeticExpression);
+    QString mathjsPowerSymbolToJavascriptPowerSymbol(QString arithmeticExpression);
+    QString javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeticExpression);
+    QString computePartialDerivative(char variable);
+    void setLineEditText(QLineEdit *lineEdit, QString text);
+    void customizeAxes();
+    QString formatArithmeticExpression(QString arithmeticExpression);
+    bool m_partialDerivarivesAreComputed;
+
 };
 
 #endif // SURFACEGRAPH_H

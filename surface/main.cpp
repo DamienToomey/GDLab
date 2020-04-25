@@ -38,8 +38,6 @@ int main(int argc, char **argv)
     Q3DSurface *graph = new Q3DSurface();
     QWidget *container = QWidget::createWindowContainer(graph);
 
-    qDebug() << "Hello World";
-
     if (!graph->hasContext()) {
         QMessageBox msgBox;
         msgBox.setText("Couldn't initialize the OpenGL context.");

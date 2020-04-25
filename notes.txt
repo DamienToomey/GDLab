@@ -1,0 +1,64 @@
+# GDLab
+
+```
+//Example expression
+arithmeticexpression = "sin(x)+2*z*sin(cos(z))+tan(2)+x+log10(z)+logit(z)+xxtan(2)+amath(xxsin(z))+pi+e";
+
+// The following line cannot do toUpper on \\1
+arithmeticexpression.replace(QRegularExpression("(\\b(?![xz])[a-z]+[0-9]*(?![\\(])\\b)"), "Math.\\1");
+https://www.qtcentre.org/threads/12178-QString-replace()-with-QRegExp-capture-modification
+```
+
+```
+QJSEngine myEngine;
+QJSValue module = myEngine.importModule("./myalgebra.mjs"); //
+
+if (module.isError())
+	qDebug()
+        << "Uncaught exception at line"
+        << module.property("lineNumber").toInt()
+        << module.property("fileName").toString()
+        << ":" << module.toString();
+
+QJSValue sumFunction = module.property("somme"); //
+QJSValueList args;
+//args << "x^2+4" << "x";
+args << 2 << 3;
+QJSValue result = sumFunction.call(args);
+qDebug() << "hello " << result.toString();
+if (result.isError())
+	qDebug()
+        << "Uncaught exception at line"
+        << result.property("lineNumber").toInt()
+        << ":" << result.toString();
+```
+
+```
+Install Qt 5.14.2
+https://wiki.qt.io/Install_Qt_5_on_Ubuntu
+qt-opensource-linux-x64-5.14.2.run : http://download.qt.io/official_releases/qt/5.14/5.14.2/
+Qt 5.14.2 -> Desktop gcc 64-bit -> Qt Data Visualization -> Developer and Designer Tools
+```
+
+```
+// 3D Functions
+// http://euler.rene-grothmann.de/Programs/03%20-%203D%20Graphics.html
+
+
+// ################################################
+// ##### Cannot see under the surface problem #####
+// ################################################
+
+// Problem caused in function updateScene
+
+// When looking at the method updateScene in bars3drenderer.cpp and scatter3drenderer.cpp,
+// there is a line that sets minYRotation :
+// scene->activeCamera()->d_ptr->setMinYRotation(-90.0);
+// whereas there no line like that for surface3drenderer so the minYRotation is blocked at 0 for Q3DSurface
+// since Q3DCameraPrivate (in q3dcamera.cpp) is instanciated with m_minYRotation(0.0f)
+
+// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/bars3drenderer.cpp.html
+// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/scatter3drenderer.cpp.html
+// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/surface3drenderer.cpp.html
+// https://code.woboq.org/qt5/qtdatavis3d/src/datavisualization/engine/q3dcamera.cpp.html
+```
