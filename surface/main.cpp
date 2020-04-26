@@ -33,7 +33,6 @@
 
 int main(int argc, char **argv)
 {
-
     QApplication app(argc, argv);
     Q3DSurface *graph = new Q3DSurface();
     QWidget *container = QWidget::createWindowContainer(graph);

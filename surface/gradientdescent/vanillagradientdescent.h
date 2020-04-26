@@ -6,8 +6,8 @@
 class VanillaGradientDescent : public GradientDescent
 {
 public:
-    VanillaGradientDescent(MainWindow *mainWindow);
-    virtual float run();
+    VanillaGradientDescent(SurfaceGraph *modifier, QVector3D selectedPoint);
+    virtual vector<QVector3D> run(float lr, float tol, int nIterMax);
 };
 
 #endif // VANILLAGRADIENTDESCENT_H

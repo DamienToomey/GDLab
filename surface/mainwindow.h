@@ -20,6 +20,10 @@
 
 #include "surfacegraph.h"
 
+#include "gradientdescent/vanillagradientdescent.h"
+#include "gradientdescent/gradientdescentwithmomentum.h"
+#include "gradientdescent/nesterovmomentum.h"
+
 #define TINYCOLORMAP_WITH_QT5
 #include "tinycolormap.hpp"
 
@@ -35,7 +39,8 @@ public:
     QLineEdit* dfdzLineEdit();
     QLineEdit* fLineEdit();
     enum Functions { InclinedTacoShell = 0, SqrtSin = 1, Saddle = 2, NonConvex = 3 };
-    enum SelectionMode { HideSelection = 0, ShowSelection = 1, RowSlice = 2, ColumnSlice = 3 };
+    enum SelectionModes { HideSelection = 0, ShowSelection = 1, RowSlice = 2, ColumnSlice = 3 };
+    enum GradientDescentMethods { _VanillaGradientDescent = 0, _GradientDescentWithMomentum = 1, _NesterovMomentum = 2 };
 
 public Q_SLOTS:
     void resetCamera();
@@ -52,6 +57,9 @@ public Q_SLOTS:
     void setPointIsSelected(bool pointIsSelected);
     bool pointIsSelected();
     QPushButton* cameraPOVButton();
+    void plotPoints(GradientDescent *gradientDescentMethod, QImage color);
+    void removePoints(GradientDescent *gradientDescentMethod);
+    void removeCurve(int curve);
 
 private:
     Q3DSurface *m_graph;
@@ -77,8 +85,15 @@ private:
     QComboBox *m_colormapList;
     QComboBox *m_surfaceList;
     QVector3D m_selectedPoint;
-    QPushButton *m_runGDButton;
+    QPushButton *m_runGradientDescentButton;
     bool m_pointIsSelected = false;
+    QComboBox *m_gradientDescentCurveList;
+    struct GradientDescentMethod {
+      GradientDescent* object;
+      QColor color;
+      QString name;
+    };
+    map<GradientDescentMethods, GradientDescentMethod> m_gdName2gdObject;
 };
 
 #endif // MAINWINDOW_H

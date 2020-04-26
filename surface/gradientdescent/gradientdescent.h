@@ -1,20 +1,21 @@
 #ifndef GRADIENTDESCENT_H
 #define GRADIENTDESCENT_H
 
-#include "mainwindow.h"
+#include "surfacegraph.h"
 #include <QtDataVisualization/QCustom3DItem>
 
 #include<cmath>
+#include <vector>
 
 class GradientDescent
 {
 public:
-    GradientDescent(MainWindow *mainWindow);
-    virtual float run() = 0; // pure virtual method
+    GradientDescent(SurfaceGraph *modifier, QVector3D selectedPoint);
+    virtual vector<QVector3D> run(float lr, float tol, int nIterMax) = 0; // pure virtual method
     float computeCostFunction(float xHat, float zHat);
     float computeDfdx(float xHat, float zHat);
     float computeDfdz(float xHat, float zHat);
-    void plotPoint(int k);
+    vector<QVector3D> pointsTable();
 
 protected:
     SurfaceGraph *m_modifier;
@@ -22,16 +23,12 @@ protected:
     float m_zHat;
     float m_dfdx;
     float m_dfdz;
-    int m_nIterMax;
-    float m_lr;
-    float m_tol;
     float m_cost;
     QJSValue m_costFunctionEngine;
     QJSValue m_dfdxEngine;
     QJSValue m_dfdzEngine;
-    MainWindow *m_mainWindow;
-    Q3DSurface *m_graph;
     QJSEngine m_engine;
+    vector<QVector3D> m_pointsTable;
 };
 
 #endif // GRADIENTDESCENT_H

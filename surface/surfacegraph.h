@@ -95,7 +95,6 @@ public:
     float yRotation();
     float zoomLevel();
     int cameraPreset();
-//    void setCameraPreset();
     void resetRange();
     void drawModel(QString arithmeticExpression);
     void setAxisXRange(float min, float max);
@@ -156,7 +155,6 @@ private:
     void customizeAxes();
     QString formatArithmeticExpression(QString arithmeticExpression);
     bool m_partialDerivarivesAreComputed;
-
 };
 
 #endif // SURFACEGRAPH_H

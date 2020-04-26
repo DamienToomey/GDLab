@@ -7,16 +7,20 @@ android|ios|winrt {
 }
 
 SOURCES += main.cpp \
-    gradientdescent.cpp \
+    gradientdescent/gradientdescent.cpp \
+    gradientdescent/gradientdescentwithmomentum.cpp \
+    gradientdescent/nesterovmomentum.cpp \
            surfacegraph.cpp \
     mainwindow.cpp \
-    vanillagradientdescent.cpp
+    gradientdescent/vanillagradientdescent.cpp
 
 HEADERS += surfacegraph.h \
-    gradientdescent.h \
+    gradientdescent/gradientdescent.h \
+    gradientdescent/gradientdescentwithmomentum.h \
     mainwindow.h \
+    gradientdescent/nesterovmomentum.h \
     tinycolormap.hpp \
-    vanillagradientdescent.h
+    gradientdescent/vanillagradientdescent.h
 
 QT += widgets qml
 requires(qtConfig(combobox))
