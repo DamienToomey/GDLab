@@ -1,7 +1,7 @@
 #include "nesterovmomentum.h"
 
-NesterovMomentum::NesterovMomentum(SurfaceGraph *modifier, QVector3D selectedPoint)
-    : GradientDescent(modifier, selectedPoint)
+NesterovMomentum::NesterovMomentum()
+    : GradientDescent()
 {
 
 }
@@ -37,4 +37,25 @@ vector<QVector3D> NesterovMomentum::run(float lr, float tol, int nIterMax)
         k += 1;
     }
     return m_pointsTable;
+}
+
+QColor NesterovMomentum::color()
+{
+    return Qt::red;
+}
+
+
+QString NesterovMomentum::name()
+{
+    return "Nesterov Momentum";
+}
+
+bool NesterovMomentum::curveIsDisplayed()
+{
+    return m_curveIsDisplayed;
+}
+
+void NesterovMomentum::setCurveIsDisplayed(bool curveIsDisplayed)
+{
+    m_curveIsDisplayed = curveIsDisplayed;
 }

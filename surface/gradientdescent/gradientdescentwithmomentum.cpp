@@ -1,7 +1,7 @@
 #include "gradientdescentwithmomentum.h"
 
-GradientDescentWithMomentum::GradientDescentWithMomentum(SurfaceGraph *modifier, QVector3D selectedPoint)
-    : GradientDescent(modifier, selectedPoint)
+GradientDescentWithMomentum::GradientDescentWithMomentum()
+    : GradientDescent()
 {
 
 }
@@ -33,4 +33,25 @@ vector<QVector3D> GradientDescentWithMomentum::run(float lr, float tol, int nIte
         k += 1;
     }
     return m_pointsTable;
+}
+
+QColor GradientDescentWithMomentum::color()
+{
+    return Qt::green;
+}
+
+
+QString GradientDescentWithMomentum::name()
+{
+    return "Gradient Descent With Momentum";
+}
+
+bool GradientDescentWithMomentum::curveIsDisplayed()
+{
+    return m_curveIsDisplayed;
+}
+
+void GradientDescentWithMomentum::setCurveIsDisplayed(bool curveIsDisplayed)
+{
+    m_curveIsDisplayed = curveIsDisplayed;
 }

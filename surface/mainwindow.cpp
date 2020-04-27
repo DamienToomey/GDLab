@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <QListWidget>
 
 MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
 {
@@ -6,15 +7,9 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_container = container;
     m_modifier = new SurfaceGraph(this);
 
-    m_gdName2gdObject[MainWindow::_VanillaGradientDescent].object = NULL;
-    m_gdName2gdObject[MainWindow::_VanillaGradientDescent].color = Qt::blue;
-    m_gdName2gdObject[MainWindow::_VanillaGradientDescent].name = "Vanilla Gradient Descent";
-    m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum].object = NULL;
-    m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum].color = Qt::green;
-    m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum].name = "Gradient Descent With Momentum";
-    m_gdName2gdObject[MainWindow::_NesterovMomentum].object = NULL;
-    m_gdName2gdObject[MainWindow::_NesterovMomentum].color = Qt::red;
-    m_gdName2gdObject[MainWindow::_NesterovMomentum].name = "Nesterov Momentum";
+    m_gdName2gdObject[MainWindow::_VanillaGradientDescent] = new VanillaGradientDescent();
+    m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum] = new GradientDescentWithMomentum();
+    m_gdName2gdObject[MainWindow::_NesterovMomentum] = new NesterovMomentum();
 
     m_widget = new QWidget;
     QHBoxLayout *hLayout = new QHBoxLayout(m_widget);
@@ -52,16 +47,16 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     const int pixmapWidth = 70;
     const int pixmapHeight = 2;
     m_gradientDescentCurveList = new QComboBox(m_widget);
-    for(map<GradientDescentMethods, GradientDescentMethod>::iterator it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
+    for(map<GradientDescentMethods, GradientDescent*>::iterator it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
     {
         QLinearGradient color2(0, 0, pixmapWidth, pixmapHeight);
-        color2.setColorAt(0.0, it->second.color);
+        color2.setColorAt(0.0, it->second->color());
         QPixmap pm2(pixmapWidth, pixmapHeight);
         QPainter pmp2(&pm2);
         pmp2.setBrush(QBrush(color2));
         pmp2.setPen(Qt::NoPen);
         pmp2.drawRect(0, 0, pixmapWidth, pixmapHeight);
-        m_gradientDescentCurveList->addItem(QIcon(pm2), it->second.name);
+        m_gradientDescentCurveList->addItem(QIcon(pm2), it->second->name());
     }
     m_gradientDescentCurveList->setIconSize(QSize(pixmapWidth, pixmapHeight));
 
@@ -162,9 +157,9 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_surfaceList->addItem(tr("SurfaceAndWireframe"));
 
     QVBoxLayout *themeLayout = new QVBoxLayout;
+    themeLayout->addWidget(m_surfaceList);
     themeLayout->addWidget(m_themeList);
     themeLayout->addWidget(m_colormapList);
-    themeLayout->addWidget(m_surfaceList);
     themeGroupBox->setLayout(themeLayout);
 
     QGroupBox *axisXRangeHBoxGroupBox = new QGroupBox(tr("Column range (X slider)"));
@@ -180,13 +175,12 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     axisZRangeHBoxGroupBox->setLayout(axisZRangeHBox);
 
     vLayout->addWidget(functionGroupBox);
-    vLayout->addWidget(new QLabel(tr("Selection Mode")));
-    m_selectionModeList = new QComboBox(m_widget);
-    m_selectionModeList->addItem(tr("Hide Selection"));
-    m_selectionModeList->addItem(tr("Show Selection"));
-    m_selectionModeList->addItem(tr("Row Slice"));
-    m_selectionModeList->addItem(tr("Column Slice"));
-    vLayout->addWidget(m_selectionModeList);
+    vLayout->addWidget(new QLabel(tr("View")));
+    m_viewList = new QComboBox(m_widget);
+    m_viewList->addItem(tr("3D Surface"));
+    m_viewList->addItem(tr("Row Slice"));
+    m_viewList->addItem(tr("Column Slice"));
+    vLayout->addWidget(m_viewList);
     vLayout->addWidget(axisXRangeHBoxGroupBox);
     vLayout->addWidget(axisZRangeHBoxGroupBox);
 
@@ -251,7 +245,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
                      m_modifier, &SurfaceGraph::adjustZMin);
     QObject::connect(m_axisMaxSliderZ, &QSlider::valueChanged,
                      m_modifier, &SurfaceGraph::adjustZMax);
-    QObject::connect(m_themeList, SIGNAL(currentIndexChanged(int)),
+    QObject::connect(m_themeList, SIGNAL(activated(int)),
                      m_modifier, SLOT(changeTheme(int)));
     QObject::connect(m_rotationSliderX, &QSlider::valueChanged, m_modifier, &SurfaceGraph::rotateX);
     QObject::connect(m_rotationSliderY, &QSlider::valueChanged, m_modifier, &SurfaceGraph::rotateY);
@@ -264,15 +258,15 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
                      m_modifier, &SurfaceGraph::computePartialDerivatives);
     QObject::connect(m_functionList, SIGNAL(currentIndexChanged(int)),
                      m_modifier, SLOT(changeCostFunction(int)));
-    QObject::connect(m_selectionModeList, SIGNAL(currentIndexChanged(int)),
+    QObject::connect(m_viewList, SIGNAL(currentIndexChanged(int)),
                      m_modifier, SLOT(changeSelectionMode(int)));
-    QObject::connect(m_colormapList, SIGNAL(currentIndexChanged(int)),
+    QObject::connect(m_colormapList, SIGNAL(activated(int)),
                      m_modifier, SLOT(changeColormap(int)));
     QObject::connect(m_surfaceList, SIGNAL(currentIndexChanged(int)),
                      m_modifier, SLOT(changeSurface(int)));
 
-    QObject::connect(m_gradientDescentCurveList, SIGNAL(currentIndexChanged(int)),
-                     this, SLOT(removeCurve(int)));
+    QObject::connect(m_gradientDescentCurveList, SIGNAL(activated(int)),
+                     this, SLOT(toggleCurve(int)));
 
 
     QObject::connect(m_cameraPOVButton, SIGNAL(clicked()), this,
@@ -285,9 +279,10 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     QObject::connect(m_graph->scene()->activeCamera(), SIGNAL(zoomLevelChanged(float)), this,
                      SLOT(updateZoomLevelSlider(float)));
 
-
-    QObject::connect(m_modifier->series(), SIGNAL(selectedPointChanged(QPoint)), this,
-                     SLOT(setSelectedPoint(QPoint)));
+//    QObject::connect(m_modifier->series(), SIGNAL(selectedPointChanged(QPoint)), this,
+//                     SLOT(setSelectedPoint(QPoint))); // Problem : does not send signal when click is perfomed at same location
+    QObject::connect(m_graph->scene(), SIGNAL(selectionQueryPositionChanged(QPoint)), this,
+                     SLOT(setSelectedPoint(QPoint)), Qt::UniqueConnection); // Problem : calls slot twice for every signal sent
 
     QObject::connect(m_runGradientDescentButton, SIGNAL(clicked()), this,
                      SLOT(runGradientDescent()));
@@ -298,10 +293,12 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_modifier->setAxisMaxSliderZ(m_axisMaxSliderZ);
 
     m_functionList->setCurrentIndex(1);
-    m_selectionModeList->setCurrentIndex(1);
+    m_themeList->activated(2);
     m_themeList->setCurrentIndex(2);
+    m_colormapList->activated(0);
     m_surfaceList->setCurrentIndex(2);
-    m_gradientDescentCurveList->setCurrentIndex(0);
+    m_viewList->setCurrentIndex(0);
+
     m_modifier->changePresetCamera();
     //widget->showMaximized();
 }
@@ -351,18 +348,22 @@ QLineEdit* MainWindow::fLineEdit()
 
 bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
 {
-    return selectedPoint != QPoint(-1,-1);
+    return selectedPoint != QPoint(-1, -1);
 }
 
 void MainWindow::setSelectedPoint(QPoint selectedPoint)
 {
-    if (pointIsOnSurface(selectedPoint)) {
-        m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
-        setPointIsSelected(true);
-    }
-    else {
-        m_graph->removeCustomItems();
-        setPointIsSelected(false);
+    // TO FIX : slot setSelectedPoint is called twice
+    if (selectedPoint == QPoint(-1, -1)) {
+        selectedPoint = m_modifier->series()->selectedPoint();
+        if (pointIsOnSurface(selectedPoint)) {
+            m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
+            setPointIsSelected(true);
+        }
+        else {
+            toggleCurves(false);
+            setPointIsSelected(false);
+        }
     }
 }
 
@@ -379,35 +380,12 @@ void MainWindow::runGradientDescent()
         float tol = 0.005;
         int nIterMax = 10000;
 
-        m_gdName2gdObject[MainWindow::_VanillaGradientDescent].object = new VanillaGradientDescent(m_modifier, selectedPoint());
-        m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum].object = new GradientDescentWithMomentum(m_modifier, selectedPoint());
-        m_gdName2gdObject[MainWindow::_NesterovMomentum].object = new NesterovMomentum(m_modifier, selectedPoint());
-
-        for(map<GradientDescentMethods, GradientDescentMethod>::iterator it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
+        map<GradientDescentMethods, GradientDescent*>::iterator it;
+        for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
         {
-            it->second.object->run(lr, tol, nIterMax);
-        }
-
-        QImage color = QImage(2, 2, QImage::Format_RGB32);
-        for(map<GradientDescentMethods, GradientDescentMethod>::iterator it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
-        {
-            switch (it->first) {
-                case MainWindow::_VanillaGradientDescent: {
-                    color.fill(Qt::blue);
-                    break;
-                }
-                case MainWindow::_GradientDescentWithMomentum: {
-                    color.fill(Qt::green);
-                    break;
-                }
-            case MainWindow::_NesterovMomentum: {
-                    color.fill(Qt::red);
-                    break;
-                }
-                default:
-                    break;
-            }
-            plotPoints(it->second.object, color);
+            it->second->initialize(m_modifier, selectedPoint());
+            it->second->run(lr, tol, nIterMax);
+            plotPoints(it->second);
         }
     }
     else {
@@ -440,31 +418,43 @@ QPushButton* MainWindow::cameraPOVButton()
     return m_cameraPOVButton;
 }
 
-void MainWindow::plotPoints(GradientDescent *gradientDescentMethod, QImage color)
+void MainWindow::toggleCurves(bool showCurve)
+{
+    for(map<GradientDescentMethods, GradientDescent*>::iterator it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
+    {
+        togglePoints(it->second, showCurve);
+    }
+}
+
+void MainWindow::plotPoints(GradientDescent *gradientDescentMethod)
 {
     vector<QVector3D> pointsTable = gradientDescentMethod->pointsTable();
-
-    for(vector<QVector3D>::iterator it=pointsTable.begin(); it!=pointsTable.end(); ++it) {
+    QImage image = QImage(2, 2, QImage::Format_RGB32);
+    image.fill(gradientDescentMethod->color());
+    for (vector<QVector3D>::iterator it=pointsTable.begin(); it!=pointsTable.end(); ++it) {
         QCustom3DItem *item = new QCustom3DItem(":/sphere/sphere", *it,
                                                 QVector3D(0.02f, 0.02f, 0.02f),
-                                                QQuaternion::fromAxisAndAngle(0.0f, 0.0f, 0.0f, 0.0f),
-                                                color);
+                                                gradientDescentMethod->rotation(),
+                                                image);
         m_graph->addCustomItem(item);
     }
+    gradientDescentMethod->setCurveIsDisplayed(true);
 }
 
-void MainWindow::removePoints(GradientDescent *gradientDescentMethod)
+void MainWindow::togglePoints(GradientDescent *gradientDescentMethod, bool showCurve)
 {
-    vector<QVector3D> pointsTable = gradientDescentMethod->pointsTable();
-
-    for(vector<QVector3D>::iterator it = pointsTable.begin(); it != pointsTable.end(); ++it) {
-        m_graph->removeCustomItemAt(*it);
+    QList<QCustom3DItem *>::iterator it;
+    QList<QCustom3DItem *> list = m_graph->customItems();
+    for (it = list.begin(); it != list.end(); ++it) {
+        if ((*it)->rotation() == gradientDescentMethod->rotation()) {
+            (*it)->setVisible(showCurve);
+        }
     }
+    gradientDescentMethod->setCurveIsDisplayed(showCurve);
 }
 
-void MainWindow::removeCurve(int curve)
+void MainWindow::toggleCurve(int curve)
 {
-    if (m_gdName2gdObject[MainWindow::GradientDescentMethods(curve)].object != NULL) {
-        removePoints(m_gdName2gdObject[MainWindow::GradientDescentMethods(curve)].object);
-    }
+    GradientDescent *gradientDescentMethod = m_gdName2gdObject[MainWindow::GradientDescentMethods(curve)];
+    togglePoints(gradientDescentMethod, !gradientDescentMethod->curveIsDisplayed());
 }

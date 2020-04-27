@@ -528,14 +528,8 @@ void SurfaceGraph::changeCostFunction(int function)
 
 void SurfaceGraph::changeSelectionMode(int selectionMode)
 {
-
     switch (selectionMode) {
-        case MainWindow::HideSelection: {
-            toggleModeNone();
-            m_mainWindow->setPointIsSelected(false);
-            break;
-        }
-        case MainWindow::ShowSelection: {
+        case MainWindow::Surface3D: {
             toggleModeItem();
             break;
         }

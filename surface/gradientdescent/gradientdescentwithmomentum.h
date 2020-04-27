@@ -6,8 +6,13 @@
 class GradientDescentWithMomentum : public GradientDescent
 {
 public:
-    GradientDescentWithMomentum(SurfaceGraph *modifier, QVector3D selectedPoint);
+    GradientDescentWithMomentum();
     virtual vector<QVector3D> run(float lr, float tol, int nIterMax);
+    virtual QColor color();
+    virtual QString name();
+    virtual bool curveIsDisplayed();
+    virtual void setCurveIsDisplayed(bool curveIsDisplayed);
+
 };
 
 #endif // GRADIENTDESCENTWITHMOMENTUM_H

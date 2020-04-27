@@ -6,8 +6,12 @@
 class NesterovMomentum : public GradientDescent
 {
 public:
-    NesterovMomentum(SurfaceGraph *modifier, QVector3D selectedPoint);
+    NesterovMomentum();
     virtual vector<QVector3D> run(float lr, float tol, int nIterMax);
+    virtual QColor color();
+    virtual QString name();
+    virtual bool curveIsDisplayed();
+    virtual void setCurveIsDisplayed(bool curveIsDisplayed);
 };
 
 #endif // NESTEROVMOMENTUM_H

@@ -67,7 +67,6 @@ public:
 
     void enableSqrtSinModel(bool enable);
 
-    void toggleModeNone() { m_graph->setSelectionMode(QAbstract3DGraph::SelectionNone); }
     void toggleModeItem() { m_graph->setSelectionMode(QAbstract3DGraph::SelectionItem); }
     void toggleModeSliceRow() { m_graph->setSelectionMode(QAbstract3DGraph::SelectionItemAndRow
                                                           | QAbstract3DGraph::SelectionSlice); }

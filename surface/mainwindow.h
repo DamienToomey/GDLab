@@ -39,7 +39,7 @@ public:
     QLineEdit* dfdzLineEdit();
     QLineEdit* fLineEdit();
     enum Functions { InclinedTacoShell = 0, SqrtSin = 1, Saddle = 2, NonConvex = 3 };
-    enum SelectionModes { HideSelection = 0, ShowSelection = 1, RowSlice = 2, ColumnSlice = 3 };
+    enum Views { Surface3D = 0, RowSlice = 1, ColumnSlice = 2 };
     enum GradientDescentMethods { _VanillaGradientDescent = 0, _GradientDescentWithMomentum = 1, _NesterovMomentum = 2 };
 
 public Q_SLOTS:
@@ -57,9 +57,10 @@ public Q_SLOTS:
     void setPointIsSelected(bool pointIsSelected);
     bool pointIsSelected();
     QPushButton* cameraPOVButton();
-    void plotPoints(GradientDescent *gradientDescentMethod, QImage color);
-    void removePoints(GradientDescent *gradientDescentMethod);
-    void removeCurve(int curve);
+    void plotPoints(GradientDescent *gradientDescentMethod);
+    void togglePoints(GradientDescent *gradientDescentMethod, bool showCurve);
+    void toggleCurve(int curve);
+    void toggleCurves(bool showCurve);
 
 private:
     Q3DSurface *m_graph;
@@ -81,19 +82,14 @@ private:
     QLineEdit *m_dfdzLineEdit;
     QPushButton *m_computePartialDerivativesButton;
     QComboBox *m_functionList;
-    QComboBox *m_selectionModeList;
+    QComboBox *m_viewList;
     QComboBox *m_colormapList;
     QComboBox *m_surfaceList;
     QVector3D m_selectedPoint;
     QPushButton *m_runGradientDescentButton;
     bool m_pointIsSelected = false;
     QComboBox *m_gradientDescentCurveList;
-    struct GradientDescentMethod {
-      GradientDescent* object;
-      QColor color;
-      QString name;
-    };
-    map<GradientDescentMethods, GradientDescentMethod> m_gdName2gdObject;
+    map<GradientDescentMethods, GradientDescent*> m_gdName2gdObject;
 };
 
 #endif // MAINWINDOW_H

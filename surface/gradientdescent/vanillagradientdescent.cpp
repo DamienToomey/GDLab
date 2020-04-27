@@ -1,7 +1,7 @@
 #include "vanillagradientdescent.h"
 
-VanillaGradientDescent::VanillaGradientDescent(SurfaceGraph *modifier, QVector3D selectedPoint)
-    : GradientDescent(modifier, selectedPoint)
+VanillaGradientDescent::VanillaGradientDescent()
+    : GradientDescent()
 {
 }
 
@@ -23,4 +23,24 @@ vector<QVector3D> VanillaGradientDescent::run(float lr, float tol, int nIterMax)
     return m_pointsTable;
 }
 
+QColor VanillaGradientDescent::color()
+{
+    return Qt::blue;
+}
+
+
+QString VanillaGradientDescent::name()
+{
+    return "Vanilla Gradient Descent";
+}
+
+bool VanillaGradientDescent::curveIsDisplayed()
+{
+    return m_curveIsDisplayed;
+}
+
+void VanillaGradientDescent::setCurveIsDisplayed(bool curveIsDisplayed)
+{
+    m_curveIsDisplayed = curveIsDisplayed;
+}
 
