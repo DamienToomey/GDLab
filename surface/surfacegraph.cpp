@@ -201,6 +201,7 @@ QString SurfaceGraph::executeSystemCommand(QString cmd)
 
 void SurfaceGraph::drawModel(QString arithmeticExpression)
 {
+    m_mainWindow->visibleCurvesMemory().clear();
     m_graph->removeCustomItems();
     m_costFunctionIsValid = true;
     setPartialDerivarivesAreComputed(false);
@@ -651,4 +652,8 @@ void SurfaceGraph::setPartialDerivarivesAreComputed(bool partialDerivarivesAreCo
 bool SurfaceGraph::partialDerivarivesAreComputed()
 {
     return m_partialDerivarivesAreComputed;
+}
+
+QSurfaceDataProxy* SurfaceGraph::proxy() {
+    return m_proxy;
 }

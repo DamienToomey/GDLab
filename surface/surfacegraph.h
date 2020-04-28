@@ -109,6 +109,7 @@ public:
     QString dfdz();
     void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
     bool partialDerivarivesAreComputed();
+    QSurfaceDataProxy* proxy();
 
 public Q_SLOTS:
     void changeTheme(int theme);

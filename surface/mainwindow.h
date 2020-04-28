@@ -61,6 +61,10 @@ public Q_SLOTS:
     void togglePoints(GradientDescent *gradientDescentMethod, bool showCurve);
     void toggleCurve(int curve);
     void toggleCurves(bool showCurve);
+    bool atLeastOneCurveIsVisible(int n_visibleCurves);
+    bool allCurvesWereVisibleBeforeHidingThem(vector<GradientDescent*> visibleCurvesMemory);
+    void initializeInitializationPointRandomly();
+    vector<GradientDescent*> visibleCurvesMemory();
 
 private:
     Q3DSurface *m_graph;
@@ -90,6 +94,7 @@ private:
     bool m_pointIsSelected = false;
     QComboBox *m_gradientDescentCurveList;
     map<GradientDescentMethods, GradientDescent*> m_gdName2gdObject;
+    vector<GradientDescent*> m_visibleCurvesMemory;
 };
 
 #endif // MAINWINDOW_H

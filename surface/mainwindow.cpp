@@ -351,6 +351,15 @@ bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
     return selectedPoint != QPoint(-1, -1);
 }
 
+bool MainWindow::atLeastOneCurveIsVisible(int n_visibleCurves) {
+    return n_visibleCurves > 0;
+}
+
+bool MainWindow::allCurvesWereVisibleBeforeHidingThem(vector<GradientDescent*> visibleCurvesMemory) {
+    return visibleCurvesMemory.size() == 0;
+}
+
+
 void MainWindow::setSelectedPoint(QPoint selectedPoint)
 {
     // TO FIX : slot setSelectedPoint is called twice
@@ -361,8 +370,46 @@ void MainWindow::setSelectedPoint(QPoint selectedPoint)
             setPointIsSelected(true);
         }
         else {
-            toggleCurves(false);
             setPointIsSelected(false);
+            int n_visibleCurves = 0;
+            int n_hiddenCurves = 0;
+
+            map<GradientDescentMethods, GradientDescent*>::iterator it;
+            for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
+            {
+                if (it->second->curveIsDisplayed()) {
+                    n_visibleCurves++;
+                    m_visibleCurvesMemory.push_back(it->second);
+                }
+                else {
+                    n_hiddenCurves++;
+                }
+            }
+
+            bool showCurve;
+
+            if (atLeastOneCurveIsVisible(n_visibleCurves)) {
+               // then hide visible curves
+               showCurve = false;
+               vector<GradientDescent*>::iterator it;
+               for(it = m_visibleCurvesMemory.begin(); it != m_visibleCurvesMemory.end(); ++it) {
+                   togglePoints(*it, showCurve);
+               }
+            }
+            else if (allCurvesWereVisibleBeforeHidingThem(m_visibleCurvesMemory)) {
+                // then make all curves visible again
+                showCurve = true;
+                toggleCurves(showCurve);
+            }
+            else { // someCurvesWereVisibleBeforeHidingThem
+                // then make only those curves visible again
+                showCurve = true;
+                vector<GradientDescent*>::iterator it;
+                for(it = m_visibleCurvesMemory.begin(); it != m_visibleCurvesMemory.end(); ++it) {
+                    togglePoints(*it, showCurve);
+                }
+                m_visibleCurvesMemory.clear();
+            }
         }
     }
 }
@@ -372,24 +419,40 @@ QVector3D MainWindow::selectedPoint()
     return m_selectedPoint;
 }
 
+void MainWindow::initializeInitializationPointRandomly()
+{
+    // rand() % 5 gives a number between 0 and 4
+    int p = rand() % m_modifier->proxy()->columnCount();
+    int n = rand() % m_modifier->proxy()->rowCount();
+    QPoint selectedPoint = QPoint(n, p);
+    m_modifier->series()->setSelectedPoint(selectedPoint);
+    m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
+}
+
 void MainWindow::runGradientDescent()
 {
+    m_visibleCurvesMemory.clear();
     m_graph->removeCustomItems();
-    if (pointIsSelected() && m_modifier->partialDerivarivesAreComputed()) {
+    QCoreApplication::processEvents(QEventLoop::AllEvents); // leave time for Qt to process removeCustomItems
+
+    if (!pointIsSelected()) {
+        initializeInitializationPointRandomly();
+    }
+
+    if (m_modifier->partialDerivarivesAreComputed()) {
         float lr = 1e-3;
         float tol = 0.005;
         int nIterMax = 10000;
 
         map<GradientDescentMethods, GradientDescent*>::iterator it;
-        for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
-        {
+        for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it) {
             it->second->initialize(m_modifier, selectedPoint());
             it->second->run(lr, tol, nIterMax);
             plotPoints(it->second);
         }
     }
     else {
-        QMessageBox::critical(this, tr("Error"), tr("Don't forget to compute partial derivatives AND to select a initialization point before running gradient descent"));
+        QMessageBox::critical(this, tr("Error"), tr("Don't forget to compute partial derivative before running gradient descent"));
     }
 }
 
@@ -420,7 +483,8 @@ QPushButton* MainWindow::cameraPOVButton()
 
 void MainWindow::toggleCurves(bool showCurve)
 {
-    for(map<GradientDescentMethods, GradientDescent*>::iterator it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
+    map<GradientDescentMethods, GradientDescent*>::iterator it;
+    for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
     {
         togglePoints(it->second, showCurve);
     }
@@ -457,4 +521,9 @@ void MainWindow::toggleCurve(int curve)
 {
     GradientDescent *gradientDescentMethod = m_gdName2gdObject[MainWindow::GradientDescentMethods(curve)];
     togglePoints(gradientDescentMethod, !gradientDescentMethod->curveIsDisplayed());
+}
+
+vector<GradientDescent*> MainWindow::visibleCurvesMemory()
+{
+    return m_visibleCurvesMemory;
 }

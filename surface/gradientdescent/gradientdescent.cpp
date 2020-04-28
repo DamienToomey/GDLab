@@ -15,6 +15,8 @@ void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializatio
     m_dfdxEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->dfdx()));
     m_dfdzEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->dfdz()));
 
+    m_pointsTable.clear();
+
     m_xHat = initializationPoint.x(); // weight in Deep Learning
     m_zHat = initializationPoint.z(); // weight in Deep Learning
     m_cost = initializationPoint.y(); // <=> computeCostFunction(m_xHat, m_zHat);
@@ -24,8 +26,6 @@ void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializatio
     // than the tolerance chosen in the while loop of the child class
     m_dfdx = 1; // partial derivative (gradient in Deep Learning)
     m_dfdz = 1; // partial derivative (gradient in Deep Learning)
-
-    m_pointsTable.clear();
 }
 
 float GradientDescent::computeCostFunction(float xHat, float zHat)

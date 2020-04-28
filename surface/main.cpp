@@ -31,9 +31,14 @@
 #include "mainwindow.h"
 #include <QDebug>
 
+#include <ctime>
+#include <cstdlib>
+
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
+    srand(time(0));
+
     Q3DSurface *graph = new Q3DSurface();
     QWidget *container = QWidget::createWindowContainer(graph);
 
