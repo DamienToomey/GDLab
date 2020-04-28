@@ -7,16 +7,22 @@ android|ios|winrt {
 }
 
 SOURCES += main.cpp \
+    gradientdescent/adagrad.cpp \
+    gradientdescent/adam.cpp \
     gradientdescent/gradientdescent.cpp \
     gradientdescent/gradientdescentwithmomentum.cpp \
     gradientdescent/nesterovmomentum.cpp \
+    gradientdescent/rmsprop.cpp \
            surfacegraph.cpp \
     mainwindow.cpp \
     gradientdescent/vanillagradientdescent.cpp
 
 HEADERS += surfacegraph.h \
+    gradientdescent/adagrad.h \
+    gradientdescent/adam.h \
     gradientdescent/gradientdescent.h \
     gradientdescent/gradientdescentwithmomentum.h \
+    gradientdescent/rmsprop.h \
     mainwindow.h \
     gradientdescent/nesterovmomentum.h \
     tinycolormap.hpp \

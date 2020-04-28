@@ -10,6 +10,9 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_gdName2gdObject[MainWindow::_VanillaGradientDescent] = new VanillaGradientDescent();
     m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum] = new GradientDescentWithMomentum();
     m_gdName2gdObject[MainWindow::_NesterovMomentum] = new NesterovMomentum();
+    m_gdName2gdObject[MainWindow::_AdaGrad] = new AdaGrad();
+    m_gdName2gdObject[MainWindow::_RMSProp] = new RMSProp();
+    m_gdName2gdObject[MainWindow::_Adam] = new Adam();
 
     m_widget = new QWidget;
     QHBoxLayout *hLayout = new QHBoxLayout(m_widget);
@@ -25,6 +28,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_functionList->addItem(tr("Sqrt && Sin"));
     m_functionList->addItem(tr("Saddle"));
     m_functionList->addItem(tr("NonConvex"));
+    m_functionList->addItem(tr("Saddle2"));
 
     QLabel *fLabel = new QLabel(tr("y = f(x, z) ="));
     m_fLineEdit = new QLineEdit(m_widget);
@@ -40,6 +44,23 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     QLabel *dfdzLabel = new QLabel(tr("df/dz ="));
     m_dfdzLineEdit = new QLineEdit(m_widget);
     m_dfdzLineEdit->setEnabled(true);
+
+    m_xSpinBox = new QDoubleSpinBox(m_widget);
+    m_xSpinBox->setRange(-8.0f, 8.0f);
+    m_xSpinBox->setSingleStep(0.1);
+    m_ySpinBox = new QDoubleSpinBox(m_widget);
+    m_ySpinBox->setDisabled(true);
+    m_zSpinBox = new QDoubleSpinBox(m_widget);
+    m_zSpinBox->setRange(-8.0f, 8.0f);
+    m_zSpinBox->setSingleStep(0.1);
+    QHBoxLayout *spinBoxLayout = new QHBoxLayout;
+
+    spinBoxLayout->addWidget(m_xSpinBox);
+    spinBoxLayout->addWidget(new QLabel("x"));
+    spinBoxLayout->addWidget(m_ySpinBox);
+    spinBoxLayout->addWidget(new QLabel("y"));
+    spinBoxLayout->addWidget(m_zSpinBox);
+    spinBoxLayout->addWidget(new QLabel("z"));
 
     m_runGradientDescentButton = new QPushButton(m_widget);
     m_runGradientDescentButton->setText(tr("Run Gradient Descent"));
@@ -78,6 +99,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     functionLayout->addLayout(dfdzLayout);
     functionLayout->addWidget(m_runGradientDescentButton);
     functionLayout->addWidget(m_gradientDescentCurveList);
+    functionLayout->addLayout(spinBoxLayout);
     functionGroupBox->setLayout(functionLayout);
 
     m_axisMinSliderX = new QSlider(Qt::Horizontal, m_widget);
@@ -367,6 +389,9 @@ void MainWindow::setSelectedPoint(QPoint selectedPoint)
         selectedPoint = m_modifier->series()->selectedPoint();
         if (pointIsOnSurface(selectedPoint)) {
             m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
+            m_xSpinBox->setValue(m_selectedPoint.x());
+            m_ySpinBox->setValue(m_selectedPoint.y());
+            m_zSpinBox->setValue(m_selectedPoint.z());
             setPointIsSelected(true);
         }
         else {
@@ -427,6 +452,9 @@ void MainWindow::initializeInitializationPointRandomly()
     QPoint selectedPoint = QPoint(n, p);
     m_modifier->series()->setSelectedPoint(selectedPoint);
     m_selectedPoint = m_modifier->series()->dataProxy()->itemAt(selectedPoint)->position();
+    m_xSpinBox->setValue(m_selectedPoint.x());
+    m_ySpinBox->setValue(m_selectedPoint.y());
+    m_zSpinBox->setValue(m_selectedPoint.z());
 }
 
 void MainWindow::runGradientDescent()

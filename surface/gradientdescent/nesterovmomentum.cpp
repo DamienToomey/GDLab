@@ -3,12 +3,18 @@
 NesterovMomentum::NesterovMomentum()
     : GradientDescent()
 {
+}
 
+float NesterovMomentum::updateRule(float xHat, float dfdx, float lr, float rho, float& vx) {
+    float old_vx = vx;
+    vx = rho * vx - lr * dfdx;
+    xHat += -rho * old_vx + (1 + rho) * vx;
+    return xHat;
 }
 
 vector<QVector3D> NesterovMomentum::run(float lr, float tol, int nIterMax)
 {
-    int k = 0;
+    int k = 1;
 
     // Stanford University | Lecture 7
     // Build up “velocity” as a running mean of gradients
@@ -16,21 +22,14 @@ vector<QVector3D> NesterovMomentum::run(float lr, float tol, int nIterMax)
     float rho = 0.9;
     float vx = 0;
     float vz = 0;
-    float old_vx;
-    float old_vz;
 
-    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k < nIterMax)) {
+    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k <= nIterMax)) {
         m_cost = computeCostFunction(m_xHat, m_zHat);
         m_dfdx = computeDfdx(m_xHat, m_zHat);
         m_dfdz = computeDfdz(m_xHat, m_zHat);
 
-        old_vx = vx;
-        vx = rho * vx - lr * m_dfdx;
-        m_xHat = m_xHat - rho * old_vx + (1 + rho) * vx;
-
-        old_vz = vz;
-        vz = rho * vz - lr * m_dfdz;
-        m_zHat = m_zHat - rho * old_vz + (1 + rho) * vz;
+        m_xHat = updateRule(m_xHat, m_dfdx, lr, rho, vx);
+        m_zHat = updateRule(m_zHat, m_dfdz, lr, rho, vz);
 
         m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
@@ -41,21 +40,11 @@ vector<QVector3D> NesterovMomentum::run(float lr, float tol, int nIterMax)
 
 QColor NesterovMomentum::color()
 {
-    return Qt::red;
+    return Qt::green;
 }
 
 
 QString NesterovMomentum::name()
 {
     return "Nesterov Momentum";
-}
-
-bool NesterovMomentum::curveIsDisplayed()
-{
-    return m_curveIsDisplayed;
-}
-
-void NesterovMomentum::setCurveIsDisplayed(bool curveIsDisplayed)
-{
-    m_curveIsDisplayed = curveIsDisplayed;
 }

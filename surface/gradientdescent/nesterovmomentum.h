@@ -10,8 +10,7 @@ public:
     virtual vector<QVector3D> run(float lr, float tol, int nIterMax);
     virtual QColor color();
     virtual QString name();
-    virtual bool curveIsDisplayed();
-    virtual void setCurveIsDisplayed(bool curveIsDisplayed);
+    float updateRule(float xHat, float dfdx, float lr, float rho, float& vx);
 };
 
 #endif // NESTEROVMOMENTUM_H

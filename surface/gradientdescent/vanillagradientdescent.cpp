@@ -5,16 +5,22 @@ VanillaGradientDescent::VanillaGradientDescent()
 {
 }
 
+float VanillaGradientDescent::updateRule(float xHat, float dfdx, float lr) {
+    xHat -= lr * dfdx;
+    return xHat;
+}
+
 vector<QVector3D> VanillaGradientDescent::run(float lr, float tol, int nIterMax)
 {
-    int k = 0;
+    int k = 1;
 
-    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k < nIterMax)) {
+    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k <= nIterMax)) {
         m_cost = computeCostFunction(m_xHat, m_zHat);
         m_dfdx = computeDfdx(m_xHat, m_zHat);
         m_dfdz = computeDfdz(m_xHat, m_zHat);
-        m_xHat = m_xHat - lr * m_dfdx;
-        m_zHat = m_zHat - lr * m_dfdz;
+
+        m_xHat = updateRule(m_xHat, m_dfdx, lr);
+        m_zHat = updateRule(m_zHat, m_dfdz, lr);
 
         m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
@@ -25,22 +31,12 @@ vector<QVector3D> VanillaGradientDescent::run(float lr, float tol, int nIterMax)
 
 QColor VanillaGradientDescent::color()
 {
-    return Qt::blue;
+    return Qt::black;
 }
 
 
 QString VanillaGradientDescent::name()
 {
     return "Vanilla Gradient Descent";
-}
-
-bool VanillaGradientDescent::curveIsDisplayed()
-{
-    return m_curveIsDisplayed;
-}
-
-void VanillaGradientDescent::setCurveIsDisplayed(bool curveIsDisplayed)
-{
-    m_curveIsDisplayed = curveIsDisplayed;
 }
 

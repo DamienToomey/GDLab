@@ -490,11 +490,6 @@ int SurfaceGraph::cameraPreset()
     return m_cameraPreset;
 }
 
-//void SurfaceGraph::setCameraPreset()
-//{
-//    m_cameraPreset++;
-//}
-
 void SurfaceGraph::changeCostFunction(int function)
 {
     QString arithmeticExpression;
@@ -516,6 +511,10 @@ void SurfaceGraph::changeCostFunction(int function)
         case MainWindow::NonConvex: {
             arithmeticExpression = "3*exp(-(z+1)**2-x**2)*(x-1)**2-exp(-(x+1)**2-z**2)/3+exp(-x**2-z**2)*(10*x**3-2*x+10*z**5)"; //
             // Function found here : https://fr.mathworks.com/help/symbolic/graphics.html
+            break;
+        }
+        case MainWindow::Saddle2: {
+            arithmeticExpression = "x**4 - z**4";
             break;
         }
         default:

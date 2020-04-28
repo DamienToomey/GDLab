@@ -17,12 +17,16 @@
 #include <QDebug>
 #include <QtWidgets/QLineEdit>
 #include <QMessageBox>
+#include <QDoubleSpinBox>
 
 #include "surfacegraph.h"
 
 #include "gradientdescent/vanillagradientdescent.h"
 #include "gradientdescent/gradientdescentwithmomentum.h"
 #include "gradientdescent/nesterovmomentum.h"
+#include "gradientdescent/adagrad.h"
+#include "gradientdescent/rmsprop.h"
+#include "gradientdescent/adam.h"
 
 #define TINYCOLORMAP_WITH_QT5
 #include "tinycolormap.hpp"
@@ -38,9 +42,14 @@ public:
     QLineEdit* dfdxLineEdit();
     QLineEdit* dfdzLineEdit();
     QLineEdit* fLineEdit();
-    enum Functions { InclinedTacoShell = 0, SqrtSin = 1, Saddle = 2, NonConvex = 3 };
+    enum Functions { InclinedTacoShell = 0, SqrtSin = 1, Saddle = 2, NonConvex = 3, Saddle2 = 4 };
     enum Views { Surface3D = 0, RowSlice = 1, ColumnSlice = 2 };
-    enum GradientDescentMethods { _VanillaGradientDescent = 0, _GradientDescentWithMomentum = 1, _NesterovMomentum = 2 };
+    enum GradientDescentMethods { _VanillaGradientDescent = 0,
+                                  _GradientDescentWithMomentum = 1,
+                                  _NesterovMomentum = 2,
+                                  _AdaGrad = 3,
+                                  _RMSProp = 4,
+                                  _Adam = 5};
 
 public Q_SLOTS:
     void resetCamera();
@@ -95,6 +104,9 @@ private:
     QComboBox *m_gradientDescentCurveList;
     map<GradientDescentMethods, GradientDescent*> m_gdName2gdObject;
     vector<GradientDescent*> m_visibleCurvesMemory;
+    QDoubleSpinBox *m_xSpinBox;
+    QDoubleSpinBox *m_ySpinBox;
+    QDoubleSpinBox *m_zSpinBox;
 };
 
 #endif // MAINWINDOW_H

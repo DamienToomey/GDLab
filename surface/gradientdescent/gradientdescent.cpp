@@ -63,3 +63,13 @@ QQuaternion GradientDescent::rotation()
 {
     return m_rotation;
 }
+
+bool GradientDescent::curveIsDisplayed()
+{
+    return m_curveIsDisplayed;
+}
+
+void GradientDescent::setCurveIsDisplayed(bool curveIsDisplayed)
+{
+    m_curveIsDisplayed = curveIsDisplayed;
+}
