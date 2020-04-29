@@ -6,6 +6,22 @@ GradientDescent::GradientDescent()
 {
     setRotation(m_curveId);
     GradientDescent::m_curveId++;
+
+    m_hyperParameterToSetter["lr"] = &GradientDescent::setLr;
+    m_hyperParameterToSetter["tol"] = &GradientDescent::setTol;
+    m_hyperParameterToSetter["nIterMax"] = &GradientDescent::setNIterMax;
+    m_hyperParameterToSetter["beta1"] = &GradientDescent::setBeta1;
+    m_hyperParameterToSetter["beta2"] = &GradientDescent::setBeta2;
+    m_hyperParameterToSetter["decayRate"] = &GradientDescent::setDecayRate;
+    m_hyperParameterToSetter["rho"] = &GradientDescent::setRho;
+
+    m_hyperParameterToGetter["lr"] = &GradientDescent::lr;
+    m_hyperParameterToGetter["tol"] = &GradientDescent::tol;
+    m_hyperParameterToGetter["nIterMax"] = &GradientDescent::nIterMax;
+    m_hyperParameterToGetter["beta1"] = &GradientDescent::beta1;
+    m_hyperParameterToGetter["beta2"] = &GradientDescent::beta2;
+    m_hyperParameterToGetter["decayRate"] = &GradientDescent::decayRate;
+    m_hyperParameterToGetter["rho"] = &GradientDescent::rho;
 }
 
 void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializationPoint)
@@ -72,4 +88,70 @@ bool GradientDescent::curveIsDisplayed()
 void GradientDescent::setCurveIsDisplayed(bool curveIsDisplayed)
 {
     m_curveIsDisplayed = curveIsDisplayed;
+}
+
+float GradientDescent::lr() {
+    return m_lr;
+}
+
+void GradientDescent::setLr(float lr) {
+    m_lr = lr;
+}
+
+float GradientDescent::tol() {
+    return m_tol;
+}
+
+void GradientDescent::setTol(float tol) {
+    m_tol = tol;
+}
+
+float GradientDescent::nIterMax() {
+    return m_nIterMax;
+}
+
+void GradientDescent::setNIterMax(float nIterMax) {
+    m_nIterMax = nIterMax;
+}
+
+float GradientDescent::beta1() {
+    return m_beta1;
+}
+
+void GradientDescent::setBeta1(float beta1) {
+    m_beta1 = beta1;
+}
+
+float GradientDescent::beta2() {
+    return m_beta2;
+}
+
+void GradientDescent::setBeta2(float beta2) {
+    m_beta2 = beta2;
+}
+
+float GradientDescent::decayRate() {
+    return m_decayRate;
+}
+
+void GradientDescent::setDecayRate(float decayRate) {
+    m_decayRate = decayRate;
+}
+
+float GradientDescent::rho() {
+    return m_rho;
+}
+
+void GradientDescent::setRho(float rho) {
+    m_rho = rho;
+}
+
+map<QString, GradientDescent::setterFunction> GradientDescent::hyperParameterToSetter()
+{
+    return m_hyperParameterToSetter;
+}
+
+map<QString, GradientDescent::getterFunction> GradientDescent::hyperParameterToGetter()
+{
+    return m_hyperParameterToGetter;
 }

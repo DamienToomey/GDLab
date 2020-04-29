@@ -11,24 +11,29 @@ float RMSProp::updateRule(float xHat, float dfdx, float lr, float decayRate, flo
     return xHat;
 }
 
-vector<QVector3D> RMSProp::run(float lr, float tol, int nIterMax)
+vector<QVector3D> RMSProp::run()
 {
     int k = 0;
+    qDebug() << "RMSProp";
+    qDebug() << "m_lr" << m_lr;
+    qDebug() << "m_tol" << m_tol;
+    qDebug() << "m_nIterMax" << m_nIterMax;
+    qDebug() << "m_decayRate" << m_decayRate;
 
     float dxSquared = 0;
     float dzSquared = 0;
 
     // Stanford University | Lecture 7
     // "This decay rate is something like 0.9 or 0.99"
-    float decayRate = 0.9;
+    //float decayRate = 0.9;
 
-    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k <= nIterMax)) {
+    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > m_tol) && (k <= (int)m_nIterMax)) {
         m_cost = computeCostFunction(m_xHat, m_zHat);
         m_dfdx = computeDfdx(m_xHat, m_zHat);
         m_dfdz = computeDfdz(m_xHat, m_zHat);
 
-        m_xHat = updateRule(m_xHat, m_dfdx, lr, decayRate, dxSquared);
-        m_zHat = updateRule(m_zHat, m_dfdz, lr, decayRate, dzSquared);
+        m_xHat = updateRule(m_xHat, m_dfdx, m_lr, m_decayRate, dxSquared);
+        m_zHat = updateRule(m_zHat, m_dfdz, m_lr, m_decayRate, dzSquared);
 
         m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
@@ -48,3 +53,6 @@ QString RMSProp::name()
     return "RMSProp";
 }
 
+QList<QString> RMSProp::hyperParameters() {
+    return { "lr", "tol", "decayRate", "nIterMax" };
+}

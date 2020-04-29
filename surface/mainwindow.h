@@ -107,6 +107,11 @@ private:
     QDoubleSpinBox *m_xSpinBox;
     QDoubleSpinBox *m_ySpinBox;
     QDoubleSpinBox *m_zSpinBox;
+    QString key(MainWindow::GradientDescentMethods gradientDescentMethod, QString hyperParameter);
+    void initializeLeftVLayout(QVBoxLayout *leftVLayout);
+    map<QString, QDoubleSpinBox*> m_keyToSpinBox;
+    void setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter);
+
 };
 
 #endif // MAINWINDOW_H

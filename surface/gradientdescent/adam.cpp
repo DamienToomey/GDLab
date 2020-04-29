@@ -16,29 +16,35 @@ float Adam::updateRule(float xHat, float dfdx, float lr, float beta1, float beta
     return xHat;
 }
 
-vector<QVector3D> Adam::run(float lr, float tol, int nIterMax)
+vector<QVector3D> Adam::run()
 {
     int k = 1;
+    qDebug() << "Adam";
+    qDebug() << "m_lr" << m_lr;
+    qDebug() << "m_tol" << m_tol;
+    qDebug() << "m_nIterMax" << m_nIterMax;
+    qDebug() << "m_beta1" << m_beta1;
+    qDebug() << "m_beta2" << m_beta2;
 
     // Stanford University | Lecture 7
     // "Adam with beta1 = 0.9, beta2 = 0.999, and learning_rate = 1e-3 or 5e-4
     // is a great starting point for many models!"
-    float beta1 = 0.9;
-    float beta2 = 0.999;
+//    float beta1 = 0.9;
+//    float beta2 = 0.999;
 
     float firstMomentX = 0;
     float secondMomentX = 0;
     float firstMomentZ = 0;
     float secondMomentZ = 0;
 
-    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k <= nIterMax)) {
+    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > m_tol) && (k <= (int)m_nIterMax)) {
         m_cost = computeCostFunction(m_xHat, m_zHat);
         m_dfdx = computeDfdx(m_xHat, m_zHat);
         m_dfdz = computeDfdz(m_xHat, m_zHat);
 
-        m_xHat = updateRule(m_xHat, m_dfdx, lr, beta1, beta2,
+        m_xHat = updateRule(m_xHat, m_dfdx, m_lr, m_beta1, m_beta2,
                             firstMomentX, secondMomentX, k);
-        m_zHat = updateRule(m_zHat, m_dfdz, lr, beta1, beta2,
+        m_zHat = updateRule(m_zHat, m_dfdz, m_lr, m_beta1, m_beta2,
                             firstMomentZ, secondMomentZ, k);
 
         m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
@@ -57,4 +63,8 @@ QColor Adam::color()
 QString Adam::name()
 {
     return "Adam";
+}
+
+QList<QString> Adam::hyperParameters() {
+    return { "lr", "tol", "beta1", "beta2", "nIterMax" };
 }

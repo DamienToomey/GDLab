@@ -7,11 +7,13 @@ class GradientDescentWithMomentum : public GradientDescent
 {
 public:
     GradientDescentWithMomentum();
-    virtual vector<QVector3D> run(float lr, float tol, int nIterMax);
+    virtual vector<QVector3D> run();
     virtual QColor color();
     virtual QString name();
-    float updateRule(float xHat, float dfdx, float lr, float rho, float& vx);
+    virtual QList<QString> hyperParameters();
 
+private:
+    float updateRule(float xHat, float dfdx, float lr, float rho, float& vx);
 };
 
 #endif // GRADIENTDESCENTWITHMOMENTUM_H

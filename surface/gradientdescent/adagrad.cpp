@@ -12,20 +12,24 @@ float AdaGrad::updateRule(float xHat, float dfdx, float lr, float& dxSquared)
     return xHat;
 }
 
-vector<QVector3D> AdaGrad::run(float lr, float tol, int nIterMax)
+vector<QVector3D> AdaGrad::run()
 {
     int k = 1;
+    qDebug() << "AdaGrad";
+    qDebug() << "m_lr" << m_lr;
+    qDebug() << "m_tol" << m_tol;
+    qDebug() << "m_nIterMax" << m_nIterMax;
 
     float dxSquared = 0;
     float dzSquared = 0;
 
-    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k <= nIterMax)) {
+    while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > m_tol) && (k <= (int)m_nIterMax)) {
         m_cost = computeCostFunction(m_xHat, m_zHat);
         m_dfdx = computeDfdx(m_xHat, m_zHat);
         m_dfdz = computeDfdz(m_xHat, m_zHat);
 
-        m_xHat = updateRule(m_xHat, m_dfdx, lr, dxSquared);
-        m_zHat = updateRule(m_zHat, m_dfdz, lr, dzSquared);
+        m_xHat = updateRule(m_xHat, m_dfdx, m_lr, dxSquared);
+        m_zHat = updateRule(m_zHat, m_dfdz, m_lr, dzSquared);
 
         m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
@@ -43,4 +47,8 @@ QColor AdaGrad::color()
 QString AdaGrad::name()
 {
     return "AdaGrad";
+}
+
+QList<QString> AdaGrad::hyperParameters() {
+    return { "lr", "tol", "nIterMax" };
 }

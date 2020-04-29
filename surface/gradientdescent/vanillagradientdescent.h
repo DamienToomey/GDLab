@@ -7,9 +7,10 @@ class VanillaGradientDescent : public GradientDescent
 {
 public:
     VanillaGradientDescent();
-    virtual vector<QVector3D> run(float lr, float tol, int nIterMax);
+    virtual vector<QVector3D> run();
     virtual QColor color();
     virtual QString name();
+    virtual QList<QString> hyperParameters();
 
 private:
     float updateRule(float xHat, float dfdx, float lr);

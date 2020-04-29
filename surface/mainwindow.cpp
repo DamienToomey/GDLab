@@ -1,5 +1,8 @@
 #include "mainwindow.h"
 #include <QListWidget>
+#include <QScrollArea>
+#include <QCheckBox>
+#include <QChar>
 
 MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
 {
@@ -17,9 +20,13 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_widget = new QWidget;
     QHBoxLayout *hLayout = new QHBoxLayout(m_widget);
     QVBoxLayout *vLayout = new QVBoxLayout();
+    QVBoxLayout *leftVLayout = new QVBoxLayout();
+    hLayout->addLayout(leftVLayout);
     hLayout->addWidget(m_container, 1);
     hLayout->addLayout(vLayout);
     vLayout->setAlignment(Qt::AlignTop);
+
+    initializeLeftVLayout(leftVLayout);
 
     m_widget->setWindowTitle("GDLab");
 
@@ -463,19 +470,22 @@ void MainWindow::runGradientDescent()
     m_graph->removeCustomItems();
     QCoreApplication::processEvents(QEventLoop::AllEvents); // leave time for Qt to process removeCustomItems
 
+    map<QString, QDoubleSpinBox*>::iterator it;
+    for (it = m_keyToSpinBox.begin(); it != m_keyToSpinBox.end(); ++it) {
+        QString hyperParameter = it->first.split("_")[1];
+        GradientDescent *gradientDescent = m_gdName2gdObject[(MainWindow::GradientDescentMethods)it->first.split("_")[0].toUcs4().first()];
+        (gradientDescent->*gradientDescent->hyperParameterToSetter()[hyperParameter])((float)it->second->value());
+    }
+
     if (!pointIsSelected()) {
         initializeInitializationPointRandomly();
     }
 
     if (m_modifier->partialDerivarivesAreComputed()) {
-        float lr = 1e-3;
-        float tol = 0.005;
-        int nIterMax = 10000;
-
         map<GradientDescentMethods, GradientDescent*>::iterator it;
         for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it) {
             it->second->initialize(m_modifier, selectedPoint());
-            it->second->run(lr, tol, nIterMax);
+            it->second->run();
             plotPoints(it->second);
         }
     }
@@ -555,3 +565,121 @@ vector<GradientDescent*> MainWindow::visibleCurvesMemory()
 {
     return m_visibleCurvesMemory;
 }
+
+QString MainWindow::key(MainWindow::GradientDescentMethods gradientDescentMethod, QString hyperParameter)
+{
+    return QString("%1_%2").arg(QString(gradientDescentMethod), hyperParameter);
+}
+
+void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
+{
+    QScrollArea *scrollArea = new QScrollArea();
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    scrollArea->setWidgetResizable(true);
+
+    QVBoxLayout *scrollLayout = new QVBoxLayout();
+
+    // -----
+    QHBoxLayout *hLayout = new QHBoxLayout();
+    QPushButton *toggleCurvesButton = new QPushButton("Toggle curves");
+    hLayout->addWidget(toggleCurvesButton);
+
+    QCheckBox *runAllGDAlgortihmsCheckbox = new QCheckBox("Run all");
+    hLayout->addWidget(runAllGDAlgortihmsCheckbox);
+
+    scrollLayout->addLayout(hLayout);
+    // -----
+
+    const int width = 20;
+    const int height = 2;
+    QPixmap pm(width, height);
+    QPainter pmp(&pm);
+    pmp.setPen(Qt::NoPen);
+    map<GradientDescentMethods, GradientDescent*>::iterator it;
+    for (it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it) {
+
+        // -----
+        hLayout = new QHBoxLayout();
+
+        pmp.setBrush(QBrush(it->second->color()));
+        pmp.drawRect(0, 0, width, height);
+        QPushButton *button = new QPushButton(QIcon(pm), it->second->name());
+        button->setIconSize(QSize(width, height));
+        button->setStyleSheet("Text-align: left; padding: 4px 0px 4px 16px;");
+        hLayout->addWidget(button);
+
+        QCheckBox *runGDAlgortihmsCheckbox = new QCheckBox("Run");
+        hLayout->addWidget(runGDAlgortihmsCheckbox);
+
+        scrollLayout->addLayout(hLayout);
+        // -----
+
+        // -----
+        QVBoxLayout *hyperParameterVLayout = new QVBoxLayout();
+
+        int i = 0;
+
+        for (QString hyperParameter : it->second->hyperParameters()) {
+           if (i % 2 == 0) {
+                hLayout = new QHBoxLayout();
+           }
+
+           QDoubleSpinBox *spinBox = new QDoubleSpinBox();
+           spinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+           if (hyperParameter == "nIterMax") {
+               spinBox->setRange(0, 100000);
+               spinBox->setDecimals(0);
+           }
+           else {
+               spinBox->setRange(-100, 100);
+               spinBox->setDecimals(4);
+           }
+
+           setPredefinedValues(spinBox, hyperParameter);
+
+           hLayout->addWidget(spinBox);
+           m_keyToSpinBox[key(it->first, hyperParameter)] = spinBox;
+
+           hLayout->addWidget(new QLabel(hyperParameter));
+           hyperParameterVLayout->addLayout(hLayout);
+           i++;
+        }
+
+        // -----
+        scrollLayout->addLayout(hyperParameterVLayout);
+    }
+    scrollArea->setLayout(scrollLayout);
+    scrollArea->setMinimumWidth(350);
+    leftVLayout->addWidget(scrollArea);
+}
+
+void MainWindow::setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter)
+{
+    if (hyperParameter == "lr") {
+        spinBox->setValue(1e-3);
+    }
+    else if (hyperParameter == "tol") {
+        spinBox->setValue(0.005);
+    }
+    else if (hyperParameter == "nIterMax") {
+        spinBox->setValue(10000);
+    }
+    else if (hyperParameter == "beta1") {
+        spinBox->setValue(0.9);
+    }
+    else if (hyperParameter == "beta2") {
+        spinBox->setValue(0.999);
+    }
+    else if (hyperParameter == "decayRate") {
+        spinBox->setValue(0.9);
+    }
+    else if (hyperParameter == "rho") {
+        spinBox->setValue(0.9);
+    }
+    else {
+        qDebug() << "Problem in setPredefinedValues";
+    }
+}
+
