@@ -57,9 +57,6 @@ public:
     SurfaceGraph* modifier();
     bool pointIsSelected();
     QPushButton* cameraPOVButton();
-//  void toggleCurves(bool showCurve);
-//  bool atLeastOneCurveIsVisible(int n_visibleCurves);
-//  bool allCurvesWereVisibleBeforeHidingThem(vector<GradientDescent*> visibleCurvesMemory);
     void initializeInitializationPointRandomly();
     vector<GradientDescent*> visibleCurvesMemory();
     void togglePoints(GradientDescent *gradientDescentMethod, bool showCurve);
@@ -74,6 +71,7 @@ public Q_SLOTS:
     void setSelectedPoint(QPoint selectedPoint);
     void runGradientDescent();
     void toggleCurve(bool checked);
+    void toggleCurves();
 
 private:
     Q3DSurface *m_graph;
@@ -103,7 +101,6 @@ private:
     bool m_pointIsSelected = false;
     QComboBox *m_gradientDescentCurveList;
     map<GradientDescentMethods, GradientDescent*> m_gdName2gdObject;
-    vector<GradientDescent*> m_visibleCurvesMemory;
     QDoubleSpinBox *m_xSpinBox;
     QDoubleSpinBox *m_ySpinBox;
     QDoubleSpinBox *m_zSpinBox;
@@ -112,8 +109,9 @@ private:
     void initializeRightVLayout(QVBoxLayout *rightVLayout);
     map<QString, QDoubleSpinBox*> m_keyToSpinBox;
     void setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter);
-    //map<MainWindow::GradientDescentMethods, QPushButton*> m_gradientDescentMethodToPushButton;
+    map<MainWindow::GradientDescentMethods, QPushButton*> m_gradientDescentMethodToPushButton;
     map<MainWindow::GradientDescentMethods, QCheckBox*> m_gradientDescentMethodToCheckBox;
+    QPushButton *m_toggleCurvesButton;
 };
 
 #endif // MAINWINDOW_H

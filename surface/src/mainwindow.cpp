@@ -84,14 +84,6 @@ bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
     return selectedPoint != QPoint(-1, -1);
 }
 
-//bool MainWindow::atLeastOneCurveIsVisible(int n_visibleCurves) {
-//    return n_visibleCurves > 0;
-//}
-
-//bool MainWindow::allCurvesWereVisibleBeforeHidingThem(vector<GradientDescent*> visibleCurvesMemory) {
-//    return visibleCurvesMemory.size() == 0;
-//}
-
 void MainWindow::setSelectedPoint(QPoint selectedPoint)
 {
     if (pointIsOnSurface(selectedPoint)) {
@@ -126,7 +118,6 @@ void MainWindow::initializeInitializationPointRandomly()
 
 void MainWindow::runGradientDescent()
 {
-    m_visibleCurvesMemory.clear();
     m_graph->removeCustomItems();
     QCoreApplication::processEvents(QEventLoop::AllEvents); // leave time for Qt to process removeCustomItems
 
@@ -221,12 +212,6 @@ void MainWindow::toggleCurve(bool checked)
     int curve = sender()->property("ID").toInt();
     GradientDescent *gradientDescentMethod = m_gdName2gdObject[MainWindow::GradientDescentMethods(curve)];
     togglePoints(gradientDescentMethod, !checked);
-}
-
-
-vector<GradientDescent*> MainWindow::visibleCurvesMemory()
-{
-    return m_visibleCurvesMemory;
 }
 
 QString MainWindow::key(MainWindow::GradientDescentMethods gradientDescentMethod, QString hyperParameter)
@@ -562,8 +547,10 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
     QVBoxLayout *scrolledLayout = new QVBoxLayout(scrolledWidget);
 
     // -----
-    QPushButton *toggleCurvesButton = new QPushButton("Toggle curves");
-    scrolledLayout->addWidget(toggleCurvesButton);
+    m_toggleCurvesButton = new QPushButton("Toggle curves");
+    scrolledLayout->addWidget(m_toggleCurvesButton);
+    QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
+                     this, SLOT(toggleCurves()));
     // -----
 
     const int width = 20;
@@ -590,10 +577,9 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
         button->setCheckable(true);
         QObject::connect(button, SIGNAL(toggled(bool)),
                          this, SLOT(toggleCurve(bool)));
+        m_gradientDescentMethodToPushButton[it->first] = button;
 
-        formLayout->addRow(runGDAlgortihmsCheckbox, button);
-
-        //m_gradientDescentMethodToPushButton[it->first] = button;
+        formLayout->addRow(runGDAlgortihmsCheckbox, button);        
 
         scrolledLayout->addLayout(formLayout);
         // -----
@@ -667,45 +653,11 @@ void MainWindow::setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParam
     }
 }
 
-
-
-
-// ------------------------------
-//int n_visibleCurves = 0;
-//int n_hiddenCurves = 0;
-
-//map<GradientDescentMethods, GradientDescent*>::iterator it;
-//for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
-//{
-//    if (it->second->curveIsDisplayed()) {
-//        n_visibleCurves++;
-//        m_visibleCurvesMemory.push_back(it->second);
-//    }
-//    else {
-//        n_hiddenCurves++;
-//    }
-//}
-
-//bool showCurve;
-
-//if (atLeastOneCurveIsVisible(n_visibleCurves)) {
-//   // then hide visible curves
-//   showCurve = false;
-//   vector<GradientDescent*>::iterator it;
-//   for(it = m_visibleCurvesMemory.begin(); it != m_visibleCurvesMemory.end(); ++it) {
-//       togglePoints(*it, showCurve);
-//   }
-//}
-//else if (allCurvesWereVisibleBeforeHidingThem(m_visibleCurvesMemory)) {
-//    // then make all curves visible again
-//    showCurve = true;
-//    toggleCurves(showCurve);
-//}
-//else { // someCurvesWereVisibleBeforeHidingThem
-//    // then make only those curves visible again
-//    showCurve = true;
-//    vector<GradientDescent*>::iterator it;
-//    for(it = m_visibleCurvesMemory.begin(); it != m_visibleCurvesMemory.end(); ++it) {
-//        togglePoints(*it, showCurve);
-//    }
-//    m_visibleCurvesMemory.clear();
+void MainWindow::toggleCurves()
+{
+    map<GradientDescentMethods, QPushButton*>::iterator it;
+    for (it = m_gradientDescentMethodToPushButton.begin(); it != m_gradientDescentMethodToPushButton.end(); ++it) {
+        QPushButton *button = m_gradientDescentMethodToPushButton[it->first];
+        button->setChecked(!button->isChecked());
+    }
+}
