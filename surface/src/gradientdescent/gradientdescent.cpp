@@ -1,4 +1,4 @@
-#include "gradientdescent.h"
+#include "gradientdescent/gradientdescent.h"
 
 int GradientDescent::m_curveId = 0;
 

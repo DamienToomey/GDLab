@@ -1,4 +1,4 @@
-#include "rmsprop.h"
+#include "gradientdescent/rmsprop.h"
 
 RMSProp::RMSProp()
     : GradientDescent()

@@ -1,7 +1,7 @@
 #ifndef GRADIENTDESCENT_H
 #define GRADIENTDESCENT_H
 
-#include "surfacegraph.h"
+#include "include/surfacegraph.h"
 #include <QtDataVisualization/QCustom3DItem>
 
 #include<cmath>

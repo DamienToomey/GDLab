@@ -6,27 +6,27 @@ android|ios|winrt {
     error( "Couldn't find the examples.pri file!" )
 }
 
-SOURCES += main.cpp \
-    gradientdescent/adagrad.cpp \
-    gradientdescent/adam.cpp \
-    gradientdescent/gradientdescent.cpp \
-    gradientdescent/gradientdescentwithmomentum.cpp \
-    gradientdescent/nesterovmomentum.cpp \
-    gradientdescent/rmsprop.cpp \
-           surfacegraph.cpp \
-    mainwindow.cpp \
-    gradientdescent/vanillagradientdescent.cpp
+SOURCES += src/main.cpp \
+    src/gradientdescent/adagrad.cpp \
+    src/gradientdescent/adam.cpp \
+    src/gradientdescent/gradientdescent.cpp \
+    src/gradientdescent/gradientdescentwithmomentum.cpp \
+    src/gradientdescent/nesterovmomentum.cpp \
+    src/gradientdescent/rmsprop.cpp \
+    src/surfacegraph.cpp \
+    src/mainwindow.cpp \
+    src/gradientdescent/vanillagradientdescent.cpp
 
-HEADERS += surfacegraph.h \
-    gradientdescent/adagrad.h \
-    gradientdescent/adam.h \
-    gradientdescent/gradientdescent.h \
-    gradientdescent/gradientdescentwithmomentum.h \
-    gradientdescent/rmsprop.h \
-    mainwindow.h \
-    gradientdescent/nesterovmomentum.h \
-    tinycolormap.hpp \
-    gradientdescent/vanillagradientdescent.h
+HEADERS += include/surfacegraph.h \
+    include/gradientdescent/adagrad.h \
+    include/gradientdescent/adam.h \
+    include/gradientdescent/gradientdescent.h \
+    include/gradientdescent/gradientdescentwithmomentum.h \
+    include/gradientdescent/rmsprop.h \
+    include/mainwindow.h \
+    include/gradientdescent/nesterovmomentum.h \
+    include/tinycolormap.hpp \
+    include/gradientdescent/vanillagradientdescent.h
 
 QT += widgets qml
 requires(qtConfig(combobox))

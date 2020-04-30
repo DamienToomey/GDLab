@@ -1,4 +1,4 @@
-#include "gradientdescentwithmomentum.h"
+#include "gradientdescent/gradientdescentwithmomentum.h"
 
 GradientDescentWithMomentum::GradientDescentWithMomentum()
     : GradientDescent()

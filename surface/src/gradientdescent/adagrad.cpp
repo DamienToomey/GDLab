@@ -1,4 +1,4 @@
-#include "adagrad.h"
+#include "gradientdescent/adagrad.h"
 
 AdaGrad::AdaGrad()
     : GradientDescent()

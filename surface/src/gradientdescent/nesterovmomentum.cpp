@@ -1,4 +1,4 @@
-#include "nesterovmomentum.h"
+#include "gradientdescent/nesterovmomentum.h"
 
 NesterovMomentum::NesterovMomentum()
     : GradientDescent()

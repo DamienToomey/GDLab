@@ -1,4 +1,4 @@
-#include "adam.h"
+#include "gradientdescent/adam.h"
 
 Adam::Adam()
     : GradientDescent()

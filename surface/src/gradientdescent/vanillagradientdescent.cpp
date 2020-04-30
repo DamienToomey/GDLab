@@ -1,4 +1,4 @@
-#include "vanillagradientdescent.h"
+#include "gradientdescent/vanillagradientdescent.h"
 
 VanillaGradientDescent::VanillaGradientDescent()
     : GradientDescent()
