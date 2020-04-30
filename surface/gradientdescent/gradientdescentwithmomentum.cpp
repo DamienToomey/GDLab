@@ -14,11 +14,6 @@ float GradientDescentWithMomentum::updateRule(float xHat, float dfdx, float lr, 
 vector<QVector3D> GradientDescentWithMomentum::run()
 {
     int k = 1;
-    qDebug() << "GradientDescentWithMomentum";
-    qDebug() << "m_lr" << m_lr;
-    qDebug() << "m_tol" << m_tol;
-    qDebug() << "m_nIterMax" << m_nIterMax;
-    qDebug() << "m_rho" << m_rho;
 
     // Stanford University | Lecture 7
     // Build up “velocity” as a running mean of gradients
@@ -50,7 +45,7 @@ QColor GradientDescentWithMomentum::color()
 
 QString GradientDescentWithMomentum::name()
 {
-    return "Gradient Descent With Momentum";
+    return "GD With Momentum";
 }
 
 QList<QString> GradientDescentWithMomentum::hyperParameters() {

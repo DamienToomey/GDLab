@@ -15,11 +15,6 @@ float NesterovMomentum::updateRule(float xHat, float dfdx, float lr, float rho, 
 vector<QVector3D> NesterovMomentum::run()
 {
     int k = 1;
-    qDebug() << "NesterovMomentum";
-    qDebug() << "m_lr" << m_lr;
-    qDebug() << "m_tol" << m_tol;
-    qDebug() << "m_nIterMax" << m_nIterMax;
-    qDebug() << "m_rho" << m_rho;
 
     // Stanford University | Lecture 7
     // Build up “velocity” as a running mean of gradients

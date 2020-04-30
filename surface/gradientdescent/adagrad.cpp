@@ -15,10 +15,6 @@ float AdaGrad::updateRule(float xHat, float dfdx, float lr, float& dxSquared)
 vector<QVector3D> AdaGrad::run()
 {
     int k = 1;
-    qDebug() << "AdaGrad";
-    qDebug() << "m_lr" << m_lr;
-    qDebug() << "m_tol" << m_tol;
-    qDebug() << "m_nIterMax" << m_nIterMax;
 
     float dxSquared = 0;
     float dzSquared = 0;

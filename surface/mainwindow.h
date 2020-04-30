@@ -42,7 +42,7 @@ public:
     QLineEdit* dfdxLineEdit();
     QLineEdit* dfdzLineEdit();
     QLineEdit* fLineEdit();
-    enum Functions { InclinedTacoShell = 0, SqrtSin = 1, Saddle = 2, NonConvex = 3, Saddle2 = 4 };
+    enum Functions { InclinedTacoShell = 0, SqrtSin = 1, NarrowSaddle = 2, NonConvex = 3, WideSaddle = 4 };
     enum Views { Surface3D = 0, RowSlice = 1, ColumnSlice = 2 };
     enum GradientDescentMethods { _VanillaGradientDescent = 0,
                                   _GradientDescentWithMomentum = 1,
@@ -50,6 +50,20 @@ public:
                                   _AdaGrad = 3,
                                   _RMSProp = 4,
                                   _Adam = 5};
+    QVector3D selectedPoint();
+    bool pointIsOnSurface(QPoint selectedPoint);
+    void setPointIsSelected(bool pointIsSelected);
+    Q3DSurface* graph();
+    SurfaceGraph* modifier();
+    bool pointIsSelected();
+    QPushButton* cameraPOVButton();
+//  void toggleCurves(bool showCurve);
+//  bool atLeastOneCurveIsVisible(int n_visibleCurves);
+//  bool allCurvesWereVisibleBeforeHidingThem(vector<GradientDescent*> visibleCurvesMemory);
+    void initializeInitializationPointRandomly();
+    vector<GradientDescent*> visibleCurvesMemory();
+    void togglePoints(GradientDescent *gradientDescentMethod, bool showCurve);
+    void plotPoints(GradientDescent *gradientDescentMethod);
 
 public Q_SLOTS:
     void resetCamera();
@@ -58,22 +72,8 @@ public Q_SLOTS:
     void updateYRotationSlider(float rotation);
     void updateZoomLevelSlider(float rotation);
     void setSelectedPoint(QPoint selectedPoint);
-    QVector3D selectedPoint();
     void runGradientDescent();
-    Q3DSurface* graph();
-    SurfaceGraph* modifier();
-    bool pointIsOnSurface(QPoint selectedPoint);
-    void setPointIsSelected(bool pointIsSelected);
-    bool pointIsSelected();
-    QPushButton* cameraPOVButton();
-    void plotPoints(GradientDescent *gradientDescentMethod);
-    void togglePoints(GradientDescent *gradientDescentMethod, bool showCurve);
-    void toggleCurve(int curve);
-    void toggleCurves(bool showCurve);
-    bool atLeastOneCurveIsVisible(int n_visibleCurves);
-    bool allCurvesWereVisibleBeforeHidingThem(vector<GradientDescent*> visibleCurvesMemory);
-    void initializeInitializationPointRandomly();
-    vector<GradientDescent*> visibleCurvesMemory();
+    void toggleCurve(bool checked);
 
 private:
     Q3DSurface *m_graph;
@@ -109,9 +109,11 @@ private:
     QDoubleSpinBox *m_zSpinBox;
     QString key(MainWindow::GradientDescentMethods gradientDescentMethod, QString hyperParameter);
     void initializeLeftVLayout(QVBoxLayout *leftVLayout);
+    void initializeRightVLayout(QVBoxLayout *rightVLayout);
     map<QString, QDoubleSpinBox*> m_keyToSpinBox;
     void setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter);
-
+    //map<MainWindow::GradientDescentMethods, QPushButton*> m_gradientDescentMethodToPushButton;
+    map<MainWindow::GradientDescentMethods, QCheckBox*> m_gradientDescentMethodToCheckBox;
 };
 
 #endif // MAINWINDOW_H

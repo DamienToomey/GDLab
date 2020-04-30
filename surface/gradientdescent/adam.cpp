@@ -19,12 +19,6 @@ float Adam::updateRule(float xHat, float dfdx, float lr, float beta1, float beta
 vector<QVector3D> Adam::run()
 {
     int k = 1;
-    qDebug() << "Adam";
-    qDebug() << "m_lr" << m_lr;
-    qDebug() << "m_tol" << m_tol;
-    qDebug() << "m_nIterMax" << m_nIterMax;
-    qDebug() << "m_beta1" << m_beta1;
-    qDebug() << "m_beta2" << m_beta2;
 
     // Stanford University | Lecture 7
     // "Adam with beta1 = 0.9, beta2 = 0.999, and learning_rate = 1e-3 or 5e-4

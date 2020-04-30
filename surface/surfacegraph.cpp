@@ -504,7 +504,7 @@ void SurfaceGraph::changeCostFunction(int function)
             arithmeticExpression = QString("(sin(%1) / %1 + 0.24) * 1.61").arg(R);
             break;
         }
-        case MainWindow::Saddle: {
+        case MainWindow::NarrowSaddle: {
             arithmeticExpression = "x**2 - z**2";
             break;
         }
@@ -513,7 +513,7 @@ void SurfaceGraph::changeCostFunction(int function)
             // Function found here : https://fr.mathworks.com/help/symbolic/graphics.html
             break;
         }
-        case MainWindow::Saddle2: {
+        case MainWindow::WideSaddle: {
             arithmeticExpression = "x**4 - z**4";
             break;
         }

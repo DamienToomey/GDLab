@@ -14,11 +14,6 @@ float RMSProp::updateRule(float xHat, float dfdx, float lr, float decayRate, flo
 vector<QVector3D> RMSProp::run()
 {
     int k = 0;
-    qDebug() << "RMSProp";
-    qDebug() << "m_lr" << m_lr;
-    qDebug() << "m_tol" << m_tol;
-    qDebug() << "m_nIterMax" << m_nIterMax;
-    qDebug() << "m_decayRate" << m_decayRate;
 
     float dxSquared = 0;
     float dzSquared = 0;

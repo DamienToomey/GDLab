@@ -18,8 +18,6 @@ public:
     vector<QVector3D> pointsTable();
     virtual QColor color() = 0;
     virtual QString name() = 0;
-    bool curveIsDisplayed();
-    void setCurveIsDisplayed(bool curveIsDisplayed);
     void initialize(SurfaceGraph *modifier, QVector3D selectedPoint);
     QQuaternion rotation();
     void setRotation(int curveId);
@@ -55,7 +53,6 @@ protected:
     QJSValue m_dfdzEngine;
     QJSEngine m_engine;
     vector<QVector3D> m_pointsTable;
-    bool m_curveIsDisplayed = false;
     static int m_curveId;
     QQuaternion m_rotation;
     float m_lr;
