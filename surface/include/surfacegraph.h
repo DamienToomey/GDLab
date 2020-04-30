@@ -110,6 +110,7 @@ public:
     void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
     bool partialDerivarivesAreComputed();
     QSurfaceDataProxy* proxy();
+    QJSValue costFunctionEngine();
 
 public Q_SLOTS:
     void changeTheme(int theme);
@@ -155,6 +156,7 @@ private:
     void customizeAxes();
     QString formatArithmeticExpression(QString arithmeticExpression);
     bool m_partialDerivarivesAreComputed;
+    QJSValue m_costFunctionEngine;
 };
 
 #endif // SURFACEGRAPH_H

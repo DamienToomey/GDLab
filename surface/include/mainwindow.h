@@ -72,6 +72,8 @@ public Q_SLOTS:
     void runGradientDescent();
     void toggleCurve(bool checked);
     void toggleCurves();
+    void setSelectedYPoint(double temp);
+    void resetValues();
 
 private:
     Q3DSurface *m_graph;
@@ -112,6 +114,9 @@ private:
     map<MainWindow::GradientDescentMethods, QPushButton*> m_gradientDescentMethodToPushButton;
     map<MainWindow::GradientDescentMethods, QCheckBox*> m_gradientDescentMethodToCheckBox;
     QPushButton *m_toggleCurvesButton;
+    QPushButton *m_resetValuesButton;
+    QCustom3DItem *m_previousItem = new QCustom3DItem();
+
 };
 
 #endif // MAINWINDOW_H

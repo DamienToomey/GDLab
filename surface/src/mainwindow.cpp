@@ -84,6 +84,29 @@ bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
     return selectedPoint != QPoint(-1, -1);
 }
 
+void MainWindow::setSelectedYPoint(double temp)
+{
+    QJSValue costFunctionEngine = m_modifier->costFunctionEngine();
+//    if (!costFunctionEngine.isError()) {
+//        float x = m_xSpinBox->value();
+//        float z = m_zSpinBox->value();
+//        QJSValueList args;
+//        args << x << z;
+//        float y = costFunctionEngine.call(args).toNumber();
+//        m_ySpinBox->setValue(y);
+
+//        m_graph->removeCustomItem(m_previousItem);
+//        QImage image = QImage(2, 2, QImage::Format_RGB32);
+//        image.fill(Qt::red);
+//        QCustom3DItem *item = new QCustom3DItem(":/sphere/sphere", QVector3D(x, y, z),
+//                                                QVector3D(0.025f, 0.025f, 0.025f),
+//                                                QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, 45.0f),
+//                                                image);
+//        m_graph->addCustomItem(item);
+//        //setPointIsSelected(true);
+//    }
+}
+
 void MainWindow::setSelectedPoint(QPoint selectedPoint)
 {
     if (pointIsOnSurface(selectedPoint)) {
@@ -173,15 +196,6 @@ QPushButton* MainWindow::cameraPOVButton()
     return m_cameraPOVButton;
 }
 
-//void MainWindow::toggleCurves(bool showCurve)
-//{
-//    map<GradientDescentMethods, GradientDescent*>::iterator it;
-//    for(it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it)
-//    {
-//        togglePoints(it->second, showCurve);
-//    }
-//}
-
 void MainWindow::plotPoints(GradientDescent *gradientDescentMethod)
 {
     vector<QVector3D> pointsTable = gradientDescentMethod->pointsTable();
@@ -266,14 +280,14 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     m_xSpinBox = new QDoubleSpinBox();
     m_xSpinBox->setLocale(QLocale::English);
     m_xSpinBox->setRange(-8.0f, 8.0f);
-    m_xSpinBox->setSingleStep(0.1);
+    m_xSpinBox->setSingleStep(0.05);
     m_ySpinBox = new QDoubleSpinBox();
     m_ySpinBox->setLocale(QLocale::English);
     m_ySpinBox->setDisabled(true);
     m_zSpinBox = new QDoubleSpinBox();
     m_zSpinBox->setLocale(QLocale::English);
     m_zSpinBox->setRange(-8.0f, 8.0f);
-    m_zSpinBox->setSingleStep(0.1);
+    m_zSpinBox->setSingleStep(0.05);
     QGridLayout *spinBoxLayout = new QGridLayout();
 
     spinBoxLayout->addWidget(m_xSpinBox, 0, 0);
@@ -509,6 +523,12 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     QObject::connect(m_runGradientDescentButton, SIGNAL(clicked()), this,
                      SLOT(runGradientDescent()));
 
+    QObject::connect(m_xSpinBox, SIGNAL(valueChanged(double)), this,
+                     SLOT(setSelectedYPoint(double)));
+
+    QObject::connect(m_zSpinBox, SIGNAL(valueChanged(double)), this,
+                     SLOT(setSelectedYPoint(double)));
+
     m_modifier->setAxisMinSliderX(m_axisMinSliderX);
     m_modifier->setAxisMaxSliderX(m_axisMaxSliderX);
     m_modifier->setAxisMinSliderZ(m_axisMinSliderZ);
@@ -552,6 +572,11 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
     QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
                      this, SLOT(toggleCurves()));
     // -----
+    m_toggleCurvesButton = new QPushButton("Reset values");
+    scrolledLayout->addWidget(m_toggleCurvesButton);
+    QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
+                     this, SLOT(resetValues()));
+    // -----
 
     const int width = 20;
     const int height = 2;
@@ -564,7 +589,7 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
 
         // -----
         QFormLayout *formLayout = new QFormLayout();
-        QCheckBox *runGDAlgortihmsCheckbox = new QCheckBox("");
+        QCheckBox *runGDAlgortihmsCheckbox = new QCheckBox();
         runGDAlgortihmsCheckbox->setChecked(true);
         m_gradientDescentMethodToCheckBox[it->first] = runGDAlgortihmsCheckbox;
 
@@ -579,7 +604,7 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
                          this, SLOT(toggleCurve(bool)));
         m_gradientDescentMethodToPushButton[it->first] = button;
 
-        formLayout->addRow(runGDAlgortihmsCheckbox, button);        
+        formLayout->addRow(runGDAlgortihmsCheckbox, button);
 
         scrolledLayout->addLayout(formLayout);
         // -----
@@ -657,7 +682,17 @@ void MainWindow::toggleCurves()
 {
     map<GradientDescentMethods, QPushButton*>::iterator it;
     for (it = m_gradientDescentMethodToPushButton.begin(); it != m_gradientDescentMethodToPushButton.end(); ++it) {
-        QPushButton *button = m_gradientDescentMethodToPushButton[it->first];
+        QPushButton *button = it->second;
         button->setChecked(!button->isChecked());
+    }
+}
+
+void MainWindow::resetValues()
+{
+    map<QString, QDoubleSpinBox*>::iterator it;
+    for (it = m_keyToSpinBox.begin(); it != m_keyToSpinBox.end(); ++it) {
+        QString hyperParameter = it->first.split("_")[1];
+        QDoubleSpinBox *spinBox = it->second;
+        setPredefinedValues(spinBox, hyperParameter);
     }
 }

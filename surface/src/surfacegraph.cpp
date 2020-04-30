@@ -206,16 +206,17 @@ void SurfaceGraph::drawModel(QString arithmeticExpression)
     setPartialDerivarivesAreComputed(false);
     m_rawCostFunction = formatArithmeticExpression(arithmeticExpression);
     m_costFunction = preprocessArithmeticExpression(arithmeticExpression);
-    QJSValue costFunctionEngine = m_arithmeticEngine.evaluate(
+    m_costFunctionEngine = m_arithmeticEngine.evaluate(
                 QString("(function(x, z) { return %1 ; })").arg(m_costFunction));
 
-    if (costFunctionEngine.isError()) {
+
+    if (m_costFunctionEngine.isError()) {
         qDebug() << "The expression is not valid";
         m_costFunctionIsValid = false;
     }
     else {
         m_graph->axisY()->setAutoAdjustRange(true);
-        fillProxy(costFunctionEngine);
+        fillProxy(m_costFunctionEngine);
         m_graph->addSeries(m_series);
         resetRange();
     }
@@ -250,6 +251,11 @@ void SurfaceGraph::adjustXMin(int min)
     float maxX = m_stepX * max + m_rangeMinX;
 
     setAxisXRange(minX, maxX);
+}
+
+QJSValue SurfaceGraph::costFunctionEngine()
+{
+    return m_costFunctionEngine;
 }
 
 void SurfaceGraph::adjustXMax(int max)
