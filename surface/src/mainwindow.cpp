@@ -1,21 +1,25 @@
 #include "mainwindow.h"
 
-#include <QScrollArea>
-#include <QCheckBox>
-#include <QFormLayout>
-
 MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
 {
     m_graph = graph;
     m_container = container;
     m_modifier = new SurfaceGraph(this);
 
-    m_gdName2gdObject[MainWindow::_VanillaGradientDescent] = new VanillaGradientDescent();
-    m_gdName2gdObject[MainWindow::_GradientDescentWithMomentum] = new GradientDescentWithMomentum();
-    m_gdName2gdObject[MainWindow::_NesterovMomentum] = new NesterovMomentum();
-    m_gdName2gdObject[MainWindow::_AdaGrad] = new AdaGrad();
-    m_gdName2gdObject[MainWindow::_RMSProp] = new RMSProp();
-    m_gdName2gdObject[MainWindow::_Adam] = new Adam();
+    m_gradientDescentMethodToGradientDescent["VanillaGradientDescent"] = new VanillaGradientDescent();
+    m_gradientDescentMethodToGradientDescent["GradientDescentWithMomentum"] = new GradientDescentWithMomentum();
+    m_gradientDescentMethodToGradientDescent["NesterovMomentum"] = new NesterovMomentum();
+    m_gradientDescentMethodToGradientDescent["AdaGrad"] = new AdaGrad();
+    m_gradientDescentMethodToGradientDescent["RMSProp"] = new RMSProp();
+    m_gradientDescentMethodToGradientDescent["Adam"] = new Adam();
+
+    int i = 0;
+    map<QString, GradientDescent*>::iterator it;
+    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
+        m_gradientDescentMethodToInt[it->first] = i;
+        m_intToGradientDescentMethod[i] = it->first;
+        i++;
+    }
 
     m_widget = new QWidget;
     QHBoxLayout *hLayout = new QHBoxLayout(m_widget);
@@ -32,8 +36,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     initializeRightVLayout(rightVLayout);
 
     m_widget->setWindowTitle("GDLab");
-    m_widget->show();
-    //widget->showMaximized();
+    m_widget->showMaximized();
 }
 
 void MainWindow::resetCamera()
@@ -74,37 +77,14 @@ QLineEdit* MainWindow::dfdzLineEdit()
     return m_dfdzLineEdit;
 }
 
-QLineEdit* MainWindow::fLineEdit()
+QLineEdit* MainWindow::costFunctionLineEdit()
 {
-    return m_fLineEdit;
+    return m_costFunctionLineEdit;
 }
 
 bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
 {
     return selectedPoint != QPoint(-1, -1);
-}
-
-void MainWindow::setSelectedYPoint(double temp)
-{
-    QJSValue costFunctionEngine = m_modifier->costFunctionEngine();
-//    if (!costFunctionEngine.isError()) {
-//        float x = m_xSpinBox->value();
-//        float z = m_zSpinBox->value();
-//        QJSValueList args;
-//        args << x << z;
-//        float y = costFunctionEngine.call(args).toNumber();
-//        m_ySpinBox->setValue(y);
-
-//        m_graph->removeCustomItem(m_previousItem);
-//        QImage image = QImage(2, 2, QImage::Format_RGB32);
-//        image.fill(Qt::red);
-//        QCustom3DItem *item = new QCustom3DItem(":/sphere/sphere", QVector3D(x, y, z),
-//                                                QVector3D(0.025f, 0.025f, 0.025f),
-//                                                QQuaternion::fromAxisAndAngle(0.0f, 1.0f, 0.0f, 45.0f),
-//                                                image);
-//        m_graph->addCustomItem(item);
-//        //setPointIsSelected(true);
-//    }
 }
 
 void MainWindow::setSelectedPoint(QPoint selectedPoint)
@@ -146,8 +126,9 @@ void MainWindow::runGradientDescent()
 
     map<QString, QDoubleSpinBox*>::iterator it;
     for (it = m_keyToSpinBox.begin(); it != m_keyToSpinBox.end(); ++it) {
-        QString hyperParameter = it->first.split("_")[1];
-        GradientDescent *gradientDescent = m_gdName2gdObject[(MainWindow::GradientDescentMethods)it->first.split("_")[0].toUcs4().first()];
+        QString gradientDescentMethod = it->first.split("_")[0];
+        QString hyperParameter = it->first.split("_")[1];        
+        GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[gradientDescentMethod];
         (gradientDescent->*gradientDescent->hyperParameterToSetter()[hyperParameter])((float)it->second->value());
     }
 
@@ -156,10 +137,10 @@ void MainWindow::runGradientDescent()
     }
 
     if (m_modifier->partialDerivarivesAreComputed()) {
-        map<GradientDescentMethods, QCheckBox*>::iterator it;
+        map<QString, QCheckBox*>::iterator it;
         for (it = m_gradientDescentMethodToCheckBox.begin(); it != m_gradientDescentMethodToCheckBox.end(); ++it) {
             if (it->second->isChecked()) {
-                GradientDescent *gradientDescent = m_gdName2gdObject[it->first];
+                GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[it->first];
                 gradientDescent->initialize(m_modifier, selectedPoint());
                 gradientDescent->run();
                 plotPoints(gradientDescent);
@@ -198,14 +179,15 @@ QPushButton* MainWindow::cameraPOVButton()
 
 void MainWindow::plotPoints(GradientDescent *gradientDescentMethod)
 {
-    vector<QVector3D> pointsTable = gradientDescentMethod->pointsTable();
+    vector<QVector3D> points = gradientDescentMethod->points();
     QImage image = QImage(2, 2, QImage::Format_RGB32);
     image.fill(gradientDescentMethod->color());
-    for (vector<QVector3D>::iterator it=pointsTable.begin(); it!=pointsTable.end(); ++it) {
+    for (vector<QVector3D>::iterator it=points.begin(); it!=points.end(); ++it) {
         QCustom3DItem *item = new QCustom3DItem(":/sphere/sphere", *it,
                                                 QVector3D(0.02f, 0.02f, 0.02f),
-                                                gradientDescentMethod->rotation(),
+                                                QQuaternion::fromAxisAndAngle(0.0f, 0.0f, 0.0f, 0.0f),
                                                 image);
+        item->setProperty("id", gradientDescentMethod->id());
         m_graph->addCustomItem(item);
     }
 }
@@ -215,7 +197,7 @@ void MainWindow::togglePoints(GradientDescent *gradientDescentMethod, bool showC
     QList<QCustom3DItem *>::iterator it;
     QList<QCustom3DItem *> list = m_graph->customItems();
     for (it = list.begin(); it != list.end(); ++it) {
-        if ((*it)->rotation() == gradientDescentMethod->rotation()) {
+        if ((*it)->property("id").toInt() == gradientDescentMethod->id()) {
             (*it)->setVisible(showCurve);
         }
     }
@@ -223,120 +205,195 @@ void MainWindow::togglePoints(GradientDescent *gradientDescentMethod, bool showC
 
 void MainWindow::toggleCurve(bool checked)
 {
-    int curve = sender()->property("ID").toInt();
-    GradientDescent *gradientDescentMethod = m_gdName2gdObject[MainWindow::GradientDescentMethods(curve)];
-    togglePoints(gradientDescentMethod, !checked);
+    int curve = sender()->property("id").toInt();
+    QString gradientDescentMethod = m_intToGradientDescentMethod[curve];
+    GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[gradientDescentMethod];
+    togglePoints(gradientDescent, !checked);
 }
 
-QString MainWindow::key(MainWindow::GradientDescentMethods gradientDescentMethod, QString hyperParameter)
+QString MainWindow::key(QString gradientDescentMethod, QString hyperParameter)
 {
-    return QString("%1_%2").arg(QString(gradientDescentMethod), hyperParameter);
+    return QString("%1_%2").arg(gradientDescentMethod, hyperParameter);
 }
 
-void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
+QScrollArea* MainWindow::initializeScrollArea(QScrollArea *scrollArea)
 {
-    QGroupBox *checkGroup = new QGroupBox("Selection des plages a importer:");
-    checkGroup->setFlat(true);
+    QGroupBox *scrollGroupBox = new QGroupBox();
 
-    // QScrollArea doit être dans un layout pour prendre toute la place
-    // du QGroupBox
-    QVBoxLayout *groupLayout = new QVBoxLayout(checkGroup);
+    // QScrollArea must be in a layout to take up all the space
+    // of the QGroupBox
+    QVBoxLayout *groupLayout = new QVBoxLayout(scrollGroupBox);
 
-    // Crée et ajoute le scrollArea au groupe
-    QScrollArea *scrollArea = new QScrollArea(checkGroup);
+    // Create and add the scrollArea to the group
+    scrollArea = new QScrollArea(scrollGroupBox);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     scrollArea->setSizePolicy(sizePolicy);
     groupLayout->addWidget(scrollArea);
 
-    // Cree le widget qui va contenir les checkboxes...
-    QWidget *scrolledWidget = new QWidget(scrollArea);
-    // ... et son layout
-    QVBoxLayout *scrolledLayout = new QVBoxLayout(scrolledWidget);
+    return scrollArea;
+}
 
-    m_functionList = new QComboBox();
-    m_functionList->addItem(tr("Inclined Taco Shell"));
-    m_functionList->addItem(tr("Sqrt & Sin"));
-    m_functionList->addItem(tr("Narrow Saddle"));
-    m_functionList->addItem(tr("NonConvex"));
-    m_functionList->addItem(tr("Wide Saddle"));
+void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
+{
+    QScrollArea *scrollArea = 0;
+    scrollArea = initializeScrollArea(scrollArea);
 
-    QLabel *fLabel = new QLabel(tr("y = f(x, z)"));
-    m_fLineEdit = new QLineEdit();
-    m_fLineEdit->setEnabled(true);
+    // Create a widget that will contain other widgets and layouts
+    QWidget *scrollWidget = new QWidget(scrollArea);
+    QVBoxLayout *scrollLayout = new QVBoxLayout(scrollWidget);
 
-    m_computePartialDerivativesButton = new QPushButton();
+    // -----
+    QGroupBox *mathsGroupBox = new QGroupBox(tr("Maths"));
+    QVBoxLayout *mathsVBox = new QVBoxLayout();
+
+    QLabel *costFunctionLabel = new QLabel("y = f(x, z)", m_widget);
+    mathsVBox->addWidget(costFunctionLabel);
+
+    m_costFunctionList = new QComboBox();
+    m_costFunctionList->addItem(tr("Inclined Taco Shell"));
+    m_costFunctionList->addItem(tr("Sqrt & Sin"));
+    m_costFunctionList->addItem(tr("Narrow Saddle"));
+    m_costFunctionList->addItem(tr("NonConvex"));
+    m_costFunctionList->addItem(tr("Wide Saddle"));
+    mathsVBox->addWidget(m_costFunctionList);
+
+    m_costFunctionLineEdit = new QLineEdit(m_widget);
+    mathsVBox->addWidget(m_costFunctionLineEdit);
+
+    m_computePartialDerivativesButton = new QPushButton(m_widget);
     m_computePartialDerivativesButton->setText(tr("Compute partial derivatives"));
+    mathsVBox->addWidget(m_computePartialDerivativesButton);
 
-    QLabel *dfdxLabel = new QLabel(tr("df/dx"));
-    m_dfdxLineEdit = new QLineEdit();
-    m_dfdxLineEdit->setEnabled(true);
+    QLabel *dfdxLabel = new QLabel("df/dx", m_widget);
+    mathsVBox->addWidget(dfdxLabel);
 
-    QLabel *dfdzLabel = new QLabel(tr("df/dz"));
-    m_dfdzLineEdit = new QLineEdit();
-    m_dfdzLineEdit->setEnabled(true);
+    m_dfdxLineEdit = new QLineEdit(m_widget);
+    m_dfdxLineEdit->setReadOnly(true);
+    mathsVBox->addWidget(m_dfdxLineEdit);
 
-    m_xSpinBox = new QDoubleSpinBox();
-    m_xSpinBox->setLocale(QLocale::English);
-    m_xSpinBox->setRange(-8.0f, 8.0f);
-    m_xSpinBox->setSingleStep(0.05);
-    m_ySpinBox = new QDoubleSpinBox();
-    m_ySpinBox->setLocale(QLocale::English);
-    m_ySpinBox->setDisabled(true);
-    m_zSpinBox = new QDoubleSpinBox();
-    m_zSpinBox->setLocale(QLocale::English);
-    m_zSpinBox->setRange(-8.0f, 8.0f);
-    m_zSpinBox->setSingleStep(0.05);
-    QGridLayout *spinBoxLayout = new QGridLayout();
+    QLabel *dfdzLabel = new QLabel("df/dz", m_widget);
+    mathsVBox->addWidget(dfdzLabel);
 
-    spinBoxLayout->addWidget(m_xSpinBox, 0, 0);
-    spinBoxLayout->addWidget(new QLabel("x"), 0, 1);
-    spinBoxLayout->addWidget(m_ySpinBox, 0, 2);
-    spinBoxLayout->addWidget(new QLabel("y"), 0, 3);
-    spinBoxLayout->addWidget(m_zSpinBox, 0, 4);
-    spinBoxLayout->addWidget(new QLabel("z"), 0, 5);
+    m_dfdzLineEdit = new QLineEdit(m_widget);
+    m_dfdzLineEdit->setReadOnly(true);
+    mathsVBox->addWidget(m_dfdzLineEdit);
 
-    m_runGradientDescentButton = new QPushButton();
+    m_runGradientDescentButton = new QPushButton(m_widget);
     m_runGradientDescentButton->setText(tr("Run Gradient Descent"));
+    mathsVBox->addWidget(m_runGradientDescentButton);
 
-    QGroupBox *functionGroupBox = new QGroupBox(tr("Function"));
-    QVBoxLayout *functionLayout = new QVBoxLayout;
-    functionLayout->addWidget(m_functionList);
-    QVBoxLayout *fLayout = new QVBoxLayout();
-    fLayout->addWidget(fLabel);
-    fLayout->addWidget(m_fLineEdit);
-    functionLayout->addLayout(fLayout);
-    functionLayout->addWidget(m_computePartialDerivativesButton);
-    QVBoxLayout *dfdxLayout = new QVBoxLayout();
-    dfdxLayout->addWidget(dfdxLabel);
-    dfdxLayout->addWidget(m_dfdxLineEdit);
-    functionLayout->addLayout(dfdxLayout);
-    QVBoxLayout *dfdzLayout = new QVBoxLayout();
-    dfdzLayout->addWidget(dfdzLabel);
-    dfdzLayout->addWidget(m_dfdzLineEdit);
-    functionLayout->addLayout(dfdzLayout);
-    functionLayout->addWidget(m_runGradientDescentButton);
-    functionLayout->addLayout(spinBoxLayout);
-    functionGroupBox->setLayout(functionLayout);
+    m_xSpinBox = new QDoubleSpinBox(m_widget);
+    m_xSpinBox->setLocale(QLocale::English);
+    m_xSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    m_xSpinBox->setReadOnly(true);
 
-    m_axisMinSliderX = new QSlider(Qt::Horizontal);
+    m_ySpinBox = new QDoubleSpinBox(m_widget);
+    m_ySpinBox->setLocale(QLocale::English);
+    m_ySpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    m_ySpinBox->setReadOnly(true);
+
+    m_zSpinBox = new QDoubleSpinBox(m_widget);
+    m_zSpinBox->setLocale(QLocale::English);
+    m_zSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    m_zSpinBox->setReadOnly(true);
+
+    QGridLayout *spinBoxGrid = new QGridLayout(m_widget);
+    spinBoxGrid->addWidget(m_xSpinBox, 0, 0);
+    spinBoxGrid->addWidget(new QLabel("x", m_widget), 0, 1);
+    spinBoxGrid->addWidget(m_ySpinBox, 0, 2);
+    spinBoxGrid->addWidget(new QLabel("y", m_widget), 0, 3);
+    spinBoxGrid->addWidget(m_zSpinBox, 0, 4);
+    spinBoxGrid->addWidget(new QLabel("z", m_widget), 0, 5);
+    mathsVBox->addLayout(spinBoxGrid);
+
+    mathsGroupBox->setLayout(mathsVBox);
+    scrollLayout->addWidget(mathsGroupBox);
+    // -----
+
+    // -----
+    QGroupBox *viewGroupBox = new QGroupBox(tr("View"));
+    QVBoxLayout *viewVBox = new QVBoxLayout();
+    m_viewList = new QComboBox();
+    m_viewList->addItem(tr("3D"));
+    m_viewList->addItem(tr("Row Slice"));
+    m_viewList->addItem(tr("Column Slice"));
+    viewVBox->addWidget(m_viewList);
+
+    m_rotationSliderX = new QSlider(Qt::Horizontal, m_widget);
+    m_rotationSliderX->setTickInterval(30);
+    m_rotationSliderX->setMinimum(-180);
+    m_rotationSliderX->setValue(m_modifier->originalXRotation());
+    m_rotationSliderX->setMaximum(180);
+    m_rotationSliderY = new QSlider(Qt::Horizontal, m_widget);
+    m_rotationSliderY->setTickInterval(10);
+    m_rotationSliderY->setMinimum(0);
+    m_rotationSliderY->setValue(m_modifier->originalYRotation());
+    m_rotationSliderY->setMaximum(90);
+    m_zoomSlider = new QSlider(Qt::Horizontal, m_widget);
+    m_zoomSlider->setTickInterval(10);
+    m_zoomSlider->setMinimum(0);
+    m_zoomSlider->setValue(m_modifier->originalZoomLevel());
+    m_zoomSlider->setMaximum(600);
+
+    m_resetCameraButton = new QPushButton(m_widget);
+    m_resetCameraButton->setText(tr("Reset view"));
+    viewVBox->addWidget(m_resetCameraButton);
+
+    m_cameraPOVButton = new QPushButton(m_widget);
+    viewVBox->addWidget(m_cameraPOVButton);
+
+    QGroupBox *rotateXGroupBox = new QGroupBox(tr("Rotate horizontally"));
+    QHBoxLayout *rotateXHBox = new QHBoxLayout();
+    rotateXHBox->addWidget(m_rotationSliderX);
+    rotateXGroupBox->setLayout(rotateXHBox);
+    viewVBox->addWidget(rotateXGroupBox);
+
+    QGroupBox *rotateYGroupBox = new QGroupBox(tr("Rotate vertically"));
+    QHBoxLayout *rotateYHBox = new QHBoxLayout();
+    rotateYHBox->addWidget(m_rotationSliderY);
+    rotateYGroupBox->setLayout(rotateYHBox);
+    viewVBox->addWidget(rotateYGroupBox);
+
+    QGroupBox *zoomGroupBox = new QGroupBox(tr("Zoom"));
+    QHBoxLayout *zoomHBox = new QHBoxLayout();
+    zoomHBox->addWidget(m_zoomSlider);
+    zoomGroupBox->setLayout(zoomHBox);
+    viewVBox->addWidget(zoomGroupBox);
+
+    m_axisMinSliderX = new QSlider(Qt::Horizontal, m_widget);
     m_axisMinSliderX->setMinimum(0);
     m_axisMinSliderX->setTickInterval(1);
-    m_axisMinSliderX->setEnabled(true);
-    m_axisMaxSliderX = new QSlider(Qt::Horizontal);
+    m_axisMaxSliderX = new QSlider(Qt::Horizontal, m_widget);
     m_axisMaxSliderX->setMinimum(1);
     m_axisMaxSliderX->setTickInterval(1);
-    m_axisMaxSliderX->setEnabled(true);
-    m_axisMinSliderZ = new QSlider(Qt::Horizontal);
+    m_axisMinSliderZ = new QSlider(Qt::Horizontal, m_widget);
     m_axisMinSliderZ->setMinimum(0);
     m_axisMinSliderZ->setTickInterval(1);
-    m_axisMinSliderZ->setEnabled(true);
-    m_axisMaxSliderZ = new QSlider(Qt::Horizontal);
+    m_axisMaxSliderZ = new QSlider(Qt::Horizontal, m_widget);
     m_axisMaxSliderZ->setMinimum(1);
     m_axisMaxSliderZ->setTickInterval(1);
-    m_axisMaxSliderZ->setEnabled(true);
 
+    QGroupBox *axisXRangeGroupBox = new QGroupBox(tr("Column range (X slider)"));
+    QVBoxLayout *axisXRangeVBox = new QVBoxLayout();
+    axisXRangeVBox->addWidget(m_axisMinSliderX);
+    axisXRangeVBox->addWidget(m_axisMaxSliderX);
+    axisXRangeGroupBox->setLayout(axisXRangeVBox);
+    viewVBox->addWidget(axisXRangeGroupBox);
+
+    QGroupBox *axisZRangeGroupBox = new QGroupBox(tr("Row range (Z slider)"));
+    QVBoxLayout *axisZRangeVBox = new QVBoxLayout();
+    axisZRangeVBox->addWidget(m_axisMinSliderZ);
+    axisZRangeVBox->addWidget(m_axisMaxSliderZ);
+    axisZRangeGroupBox->setLayout(axisZRangeVBox);
+    viewVBox->addWidget(axisZRangeGroupBox);
+
+    viewGroupBox->setLayout(viewVBox);
+    scrollLayout->addWidget(viewGroupBox);
+    // -----
+
+    // -----
     m_themeList = new QComboBox();
     m_themeList->addItem(tr("Qt"));
     m_themeList->addItem(tr("Primary Colors"));
@@ -348,46 +405,43 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     m_themeList->addItem(tr("Isabelle"));
 
     QGroupBox *themeGroupBox = new QGroupBox(tr("Theme"));
+    map<int, QString> m_intToColormap;
+    m_intToColormap[0] = "Default";
+    m_intToColormap[(int)ColormapType::Heat] = "Heat";
+    m_intToColormap[(int)ColormapType::Jet] = "Jet";
+    m_intToColormap[(int)ColormapType::Hot] = "Hot";
+    m_intToColormap[(int)ColormapType::Gray] = "Gray";
+    m_intToColormap[(int)ColormapType::Magma] = "Magma";
+    m_intToColormap[(int)ColormapType::Inferno] = "Inferno";
+    m_intToColormap[(int)ColormapType::Plasma] = "Plasma";
+    m_intToColormap[(int)ColormapType::Viridis] = "Viridis";
+    m_intToColormap[(int)ColormapType::Cividis] = "Cividis";
+    m_intToColormap[(int)ColormapType::Github] = "Github";
 
     const int pixMapWidth = 150;
     const int pixMapHeight = 15;
-    QLinearGradient uniformColorMap(0, 0, pixMapWidth, pixMapHeight);
-    uniformColorMap.setColorAt(0.0, Qt::gray);
     QPixmap pm(pixMapWidth, pixMapHeight);
     QPainter pmp(&pm);
-    pmp.setBrush(QBrush(uniformColorMap));
     pmp.setPen(Qt::NoPen);
-    pmp.drawRect(0, 0, pixMapWidth, pixMapHeight);
+    QLinearGradient gr(0, 0, pixMapWidth, pixMapHeight);
 
     m_colormapList = new QComboBox();
-    m_colormapList->addItem(QIcon(pm), tr("Default"));
-
-    static map<tinycolormap::ColormapType, QString> colormap2string = {
-       {tinycolormap::ColormapType::Heat, "Heat"},
-       {tinycolormap::ColormapType::Jet, "Jet"},
-       {tinycolormap::ColormapType::Hot, "Hot"},
-       {tinycolormap::ColormapType::Gray, "Gray"},
-       {tinycolormap::ColormapType::Magma, "Magma"},
-       {tinycolormap::ColormapType::Inferno, "Inferno"},
-       {tinycolormap::ColormapType::Plasma, "Plasma"},
-       {tinycolormap::ColormapType::Viridis, "Viridis"},
-       {tinycolormap::ColormapType::Cividis, "Cividis"},
-       {tinycolormap::ColormapType::Github, "Github"}
-    };
-
-    for(map<tinycolormap::ColormapType, QString>::iterator it = colormap2string.begin(); it != colormap2string.end(); ++it)
-    {
-        QLinearGradient gr(0, 0, pixMapWidth, pixMapHeight);
-        for (float i = 0; i<=1; i += 0.1) {
-            const QColor color = tinycolormap::GetColor(i, it->first).ConvertToQColor();
-            gr.setColorAt(i, color);
+    map<int, QString>::iterator it;
+    for(it = m_intToColormap.begin(); it != m_intToColormap.end(); ++it) {
+        if (it->second == "Default") {
+            gr.setColorAt(0, QColor(234, 234, 234));
         }
-
+        else {
+            for (float i = 0; i <= 1 ; i += 0.1) {
+                const QColor color = tinycolormap::GetColor(i, (ColormapType)it->first).ConvertToQColor();
+                gr.setColorAt(i, color);
+            }
+        }
         pmp.setBrush(QBrush(gr));
         pmp.drawRect(0, 0, pixMapWidth, pixMapHeight);
         m_colormapList->addItem(QIcon(pm), it->second);
+        m_intToLinearGradient[it->first] = gr;
     }
-
     m_colormapList->setIconSize(QSize(pixMapWidth, pixMapHeight));
 
     m_surfaceList = new QComboBox();
@@ -401,81 +455,13 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     themeLayout->addWidget(m_colormapList);
     themeGroupBox->setLayout(themeLayout);
 
-    QGroupBox *axisXRangeHBoxGroupBox = new QGroupBox(tr("Column range (X slider)"));
-    QVBoxLayout *axisXRangeVBox = new QVBoxLayout();
-    axisXRangeVBox->addWidget(m_axisMinSliderX);
-    axisXRangeVBox->addWidget(m_axisMaxSliderX);
-    axisXRangeHBoxGroupBox->setLayout(axisXRangeVBox);
+    scrollLayout->addWidget(themeGroupBox);
+    // -----
 
-    QGroupBox *axisZRangeHBoxGroupBox = new QGroupBox(tr("Row range (Z slider)"));
-    QVBoxLayout *axisZRangeVBox = new QVBoxLayout();
-    axisZRangeVBox->addWidget(m_axisMinSliderZ);
-    axisZRangeVBox->addWidget(m_axisMaxSliderZ);
-    axisZRangeHBoxGroupBox->setLayout(axisZRangeVBox);
-
-    scrolledLayout->addWidget(functionGroupBox);
-    scrolledLayout->addWidget(new QLabel(tr("View")));
-    m_viewList = new QComboBox();
-    m_viewList->addItem(tr("3D Surface"));
-    m_viewList->addItem(tr("Row Slice"));
-    m_viewList->addItem(tr("Column Slice"));
-    scrolledLayout->addWidget(m_viewList);
-    scrolledLayout->addWidget(axisXRangeHBoxGroupBox);
-    scrolledLayout->addWidget(axisZRangeHBoxGroupBox);
-
-    scrolledLayout->addWidget(themeGroupBox);
-
-    m_rotationSliderX = new QSlider(Qt::Horizontal);
-    m_rotationSliderX->setTickInterval(30);
-    m_rotationSliderX->setMinimum(-180);
-    m_rotationSliderX->setValue(m_modifier->originalXRotation());
-    m_rotationSliderX->setMaximum(180);
-    m_rotationSliderY = new QSlider(Qt::Horizontal);
-    m_rotationSliderY->setTickInterval(10);
-    m_rotationSliderY->setMinimum(0);
-    m_rotationSliderY->setValue(m_modifier->originalYRotation());
-    m_rotationSliderY->setMaximum(90);
-    m_zoomSlider = new QSlider(Qt::Horizontal);
-    m_zoomSlider->setTickInterval(10);
-    m_zoomSlider->setMinimum(0);
-    m_zoomSlider->setValue(m_modifier->originalZoomLevel());
-    m_zoomSlider->setMaximum(600);
-
-    m_resetCameraButton = new QPushButton();
-    m_resetCameraButton->setText(tr("Reset view"));
-
-    m_cameraPOVButton = new QPushButton();
-
-    QGridLayout *gridLayout = new QGridLayout();
-
-    QVBoxLayout *buttonsVBox = new QVBoxLayout();
-    buttonsVBox->addWidget(m_cameraPOVButton, 0, Qt::AlignTop);
-    buttonsVBox->addWidget(m_resetCameraButton, 0, Qt::AlignTop);
-    gridLayout->addLayout(buttonsVBox, 0, 0);
-
-    QGroupBox *zoomGroupBox = new QGroupBox(tr("Zoom"));
-    QHBoxLayout *zoomHBox = new QHBoxLayout();
-    zoomHBox->addWidget(m_zoomSlider, 0, Qt::AlignTop);
-    zoomGroupBox->setLayout(zoomHBox);
-    gridLayout->addWidget(zoomGroupBox, 1, 0);
-
-    QGroupBox *rotateXGroupBox = new QGroupBox(tr("Rotate horizontally"));
-    QHBoxLayout *rotateXHBox = new QHBoxLayout();
-    rotateXHBox->addWidget(m_rotationSliderX, 0, Qt::AlignTop);
-    rotateXGroupBox->setLayout(rotateXHBox);
-    gridLayout->addWidget(rotateXGroupBox, 2, 0);
-
-    QGroupBox *rotateYGroupBox = new QGroupBox(tr("Rotate vertically"));
-    QHBoxLayout *rotateYHBox = new QHBoxLayout();
-    rotateYHBox->addWidget(m_rotationSliderY, 0, Qt::AlignTop);
-    rotateYGroupBox->setLayout(rotateYHBox);
-    gridLayout->addWidget(rotateYGroupBox, 3, 0);
-    scrolledLayout->addLayout(gridLayout);
-
-    scrollArea->setWidget(scrolledWidget);
+    scrollArea->setWidget(scrollWidget);
     rightVLayout->addWidget(scrollArea);
 
-    QObject::connect(m_fLineEdit, &QLineEdit::textEdited,
+    QObject::connect(m_costFunctionLineEdit, &QLineEdit::textEdited,
                      m_modifier, &SurfaceGraph::drawModel);
     QObject::connect(m_axisMinSliderX, &QSlider::valueChanged,
                      m_modifier, &SurfaceGraph::adjustXMin);
@@ -486,24 +472,24 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     QObject::connect(m_axisMaxSliderZ, &QSlider::valueChanged,
                      m_modifier, &SurfaceGraph::adjustZMax);
     QObject::connect(m_themeList, SIGNAL(activated(int)),
-                     m_modifier, SLOT(changeTheme(int)));
+                     m_modifier, SLOT(setTheme(int)));
     QObject::connect(m_rotationSliderX, &QSlider::valueChanged, m_modifier, &SurfaceGraph::rotateX);
     QObject::connect(m_rotationSliderY, &QSlider::valueChanged, m_modifier, &SurfaceGraph::rotateY);
     QObject::connect(m_zoomSlider, &QSlider::valueChanged, m_modifier, &SurfaceGraph::zoom);
     QObject::connect(m_resetCameraButton, SIGNAL(clicked()), this,
                      SLOT(resetCamera()));
     QObject::connect(m_cameraPOVButton, &QPushButton::pressed, m_modifier,
-                     &SurfaceGraph::changePresetCamera);
+                     &SurfaceGraph::setCameraPreset);
     QObject::connect(m_computePartialDerivativesButton, &QPushButton::pressed,
                      m_modifier, &SurfaceGraph::computePartialDerivatives);
-    QObject::connect(m_functionList, SIGNAL(currentIndexChanged(int)),
-                     m_modifier, SLOT(changeCostFunction(int)));
+    QObject::connect(m_costFunctionList, SIGNAL(currentIndexChanged(int)),
+                     m_modifier, SLOT(setCostFunction(int)));
     QObject::connect(m_viewList, SIGNAL(currentIndexChanged(int)),
-                     m_modifier, SLOT(changeSelectionMode(int)));
+                     m_modifier, SLOT(setSelectionMode(int)));
     QObject::connect(m_colormapList, SIGNAL(activated(int)),
-                     m_modifier, SLOT(changeColormap(int)));
+                     m_modifier, SLOT(setColormap(int)));
     QObject::connect(m_surfaceList, SIGNAL(currentIndexChanged(int)),
-                     m_modifier, SLOT(changeSurface(int)));
+                     m_modifier, SLOT(setSurface(int)));
 
     QObject::connect(m_cameraPOVButton, SIGNAL(clicked()), this,
                      SLOT(updateSliders()));
@@ -516,66 +502,49 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
                      SLOT(updateZoomLevelSlider(float)));
 
     QObject::connect(m_modifier->series(), SIGNAL(selectedPointChanged(QPoint)), this,
-    SLOT(setSelectedPoint(QPoint))); // Problem : does not send signal when click is perfomed at same location
-/*    QObject::connect(m_graph->scene(), SIGNAL(selectionQueryPositionChanged(QPoint)), this,
-                     SLOT(setSelectedPoint(QPoint)), Qt::UniqueConnection);*/ // Problem : calls slot twice for every signal sent
-
+    SLOT(setSelectedPoint(QPoint)));
     QObject::connect(m_runGradientDescentButton, SIGNAL(clicked()), this,
                      SLOT(runGradientDescent()));
-
-    QObject::connect(m_xSpinBox, SIGNAL(valueChanged(double)), this,
-                     SLOT(setSelectedYPoint(double)));
-
-    QObject::connect(m_zSpinBox, SIGNAL(valueChanged(double)), this,
-                     SLOT(setSelectedYPoint(double)));
 
     m_modifier->setAxisMinSliderX(m_axisMinSliderX);
     m_modifier->setAxisMaxSliderX(m_axisMaxSliderX);
     m_modifier->setAxisMinSliderZ(m_axisMinSliderZ);
     m_modifier->setAxisMaxSliderZ(m_axisMaxSliderZ);
 
-    m_functionList->setCurrentIndex(1);
+    m_costFunctionList->setCurrentIndex(1);
     m_themeList->activated(2);
     m_themeList->setCurrentIndex(2);
     m_colormapList->activated(0);
     m_surfaceList->setCurrentIndex(2);
     m_viewList->setCurrentIndex(0);
 
-    m_modifier->changePresetCamera();
+    m_modifier->setCameraPreset();
 }
 
 void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
 {
-    QGroupBox *checkGroup = new QGroupBox("Selection des plages a importer:");
-    checkGroup->setFlat(true);
+    QScrollArea *scrollArea = 0;
+    scrollArea = initializeScrollArea(scrollArea);
 
-    // QScrollArea doit être dans un layout pour prendre toute la place
-    // du QGroupBox
-    QVBoxLayout *groupLayout = new QVBoxLayout(checkGroup);
-
-    // Crée et ajoute le scrollArea au groupe
-    QScrollArea *scrollArea = new QScrollArea(checkGroup);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    scrollArea->setSizePolicy(sizePolicy);
-    groupLayout->addWidget(scrollArea);
-
-    // Cree le widget qui va contenir les checkboxes...
-    QWidget *scrolledWidget = new QWidget(scrollArea);
-
-    QVBoxLayout *scrolledLayout = new QVBoxLayout(scrolledWidget);
+    // Create a widget that will contain other widgets and layouts
+    QWidget *scrollWidget = new QWidget(scrollArea);
+    QVBoxLayout *scrollLayout = new QVBoxLayout(scrollWidget);
 
     // -----
-    m_toggleCurvesButton = new QPushButton("Toggle curves");
-    scrolledLayout->addWidget(m_toggleCurvesButton);
+    m_toggleCurvesButton = new QPushButton(tr("Toggle curves"), m_widget);
+    scrollLayout->addWidget(m_toggleCurvesButton);
     QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
                      this, SLOT(toggleCurves()));
     // -----
-    m_toggleCurvesButton = new QPushButton("Reset values");
-    scrolledLayout->addWidget(m_toggleCurvesButton);
+    m_toggleCurvesButton = new QPushButton(tr("Reset values"), m_widget);
+    scrollLayout->addWidget(m_toggleCurvesButton);
     QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
                      this, SLOT(resetValues()));
+    // -----
+    m_checkAllCheckboxesButton = new QPushButton(tr("Select all"), m_widget);
+    scrollLayout->addWidget(m_checkAllCheckboxesButton);
+    QObject::connect(m_checkAllCheckboxesButton, SIGNAL(pressed()),
+                     this, SLOT(checkAllCheckboxes()));
     // -----
 
     const int width = 20;
@@ -584,8 +553,8 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
     QPainter pmp(&pm);
     pmp.setPen(Qt::NoPen);
 
-    map<GradientDescentMethods, GradientDescent*>::iterator it;
-    for (it = m_gdName2gdObject.begin(); it != m_gdName2gdObject.end(); ++it) {
+    map<QString, GradientDescent*>::iterator it;
+    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
 
         // -----
         QFormLayout *formLayout = new QFormLayout();
@@ -595,10 +564,10 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
 
         pmp.setBrush(QBrush(it->second->color()));
         pmp.drawRect(0, 0, width, height);
-        QPushButton *button = new QPushButton(QIcon(pm), it->second->name());
+        QPushButton *button = new QPushButton(QIcon(pm), it->second->name(), m_widget);
         button->setIconSize(QSize(width, height));
         button->setStyleSheet("Text-align: left; padding: 4px 0px 4px 4px;");
-        button->setProperty("ID", it->first);
+        button->setProperty("id", m_gradientDescentMethodToInt[it->first]);
         button->setCheckable(true);
         QObject::connect(button, SIGNAL(toggled(bool)),
                          this, SLOT(toggleCurve(bool)));
@@ -606,7 +575,7 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
 
         formLayout->addRow(runGDAlgortihmsCheckbox, button);
 
-        scrolledLayout->addLayout(formLayout);
+        scrollLayout->addLayout(formLayout);
         // -----
 
         // -----
@@ -620,8 +589,7 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
                 i++;
                 j = 0;
            }
-
-           QDoubleSpinBox *spinBox = new QDoubleSpinBox();
+           QDoubleSpinBox *spinBox = new QDoubleSpinBox(m_widget);
            spinBox->setLocale(QLocale::English);
            spinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
            if (hyperParameter == "nIterMax") {
@@ -638,15 +606,15 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
            j++;
            m_keyToSpinBox[key(it->first, hyperParameter)] = spinBox;
 
-           gridLayout->addWidget(new QLabel(hyperParameter), i, j);
+           gridLayout->addWidget(new QLabel(hyperParameter, m_widget), i, j);
            j++;
            hyperParameterVLayout->addLayout(gridLayout);
         }
 
         // -----
-        scrolledLayout->addLayout(hyperParameterVLayout);
+        scrollLayout->addLayout(hyperParameterVLayout);
     }
-    scrollArea->setWidget(scrolledWidget);
+    scrollArea->setWidget(scrollWidget);
     leftVLayout->addWidget(scrollArea);
 }
 
@@ -680,7 +648,7 @@ void MainWindow::setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParam
 
 void MainWindow::toggleCurves()
 {
-    map<GradientDescentMethods, QPushButton*>::iterator it;
+    map<QString, QPushButton*>::iterator it;
     for (it = m_gradientDescentMethodToPushButton.begin(); it != m_gradientDescentMethodToPushButton.end(); ++it) {
         QPushButton *button = it->second;
         button->setChecked(!button->isChecked());
@@ -694,5 +662,28 @@ void MainWindow::resetValues()
         QString hyperParameter = it->first.split("_")[1];
         QDoubleSpinBox *spinBox = it->second;
         setPredefinedValues(spinBox, hyperParameter);
+    }
+}
+
+void MainWindow::checkAllCheckboxes()
+{
+    map<QString, QCheckBox*>::iterator it;
+    for (it = m_gradientDescentMethodToCheckBox.begin(); it != m_gradientDescentMethodToCheckBox.end(); ++it) {
+        it->second->setChecked(true);
+    }
+}
+
+map<int, QLinearGradient> MainWindow::intToLinearGradient() {
+    return m_intToLinearGradient;
+}
+
+MainWindow::~MainWindow()
+{
+    delete m_graph;
+    delete m_modifier;
+
+    map<QString, GradientDescent*>::iterator it;
+    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
+        delete it->second;
     }
 }

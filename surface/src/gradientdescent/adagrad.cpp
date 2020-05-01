@@ -27,11 +27,11 @@ vector<QVector3D> AdaGrad::run()
         m_xHat = updateRule(m_xHat, m_dfdx, m_lr, dxSquared);
         m_zHat = updateRule(m_zHat, m_dfdz, m_lr, dzSquared);
 
-        m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
+        m_points.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
         k += 1;
     }
-    return m_pointsTable;
+    return m_points;
 }
 
 QColor AdaGrad::color()

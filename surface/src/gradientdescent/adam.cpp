@@ -41,11 +41,11 @@ vector<QVector3D> Adam::run()
         m_zHat = updateRule(m_zHat, m_dfdz, m_lr, m_beta1, m_beta2,
                             firstMomentZ, secondMomentZ, k);
 
-        m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
+        m_points.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
         k += 1;
     }
-    return m_pointsTable;
+    return m_points;
 }
 
 QColor Adam::color()

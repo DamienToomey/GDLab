@@ -49,7 +49,7 @@ namespace tinycolormap
 
     enum class ColormapType
     {
-        Heat, Jet, Hot, Gray, Magma, Inferno, Plasma, Viridis, Cividis, Github
+        Heat = 1, Jet = 2, Hot = 3, Gray = 4, Magma = 5, Inferno = 6, Plasma = 7, Viridis = 8, Cividis = 9, Github = 10
     };
 
     struct Color
@@ -111,31 +111,53 @@ namespace tinycolormap
 
     inline Color GetColor(double x, ColormapType type)
     {
+        Color color = { 0.0, 0.0, 0.0 };
         switch (type)
         {
-            case ColormapType::Heat:
-                return GetHeatColor(x);
-            case ColormapType::Jet:
-                return GetJetColor(x);
-            case ColormapType::Hot:
-                return GetHotColor(x);
-            case ColormapType::Gray:
-                return GetGrayColor(x);
-            case ColormapType::Magma:
-                return GetMagmaColor(x);
-            case ColormapType::Inferno:
-                return GetInfernoColor(x);
-            case ColormapType::Plasma:
-                return GetPlasmaColor(x);
-            case ColormapType::Viridis:
-                return GetViridisColor(x);
-            case ColormapType::Cividis:
-                return GetCividisColor(x);
-            case ColormapType::Github:
-                return GetGithubColor(x);
+            case ColormapType::Heat: {
+                color = GetHeatColor(x);
+                break;
+            }
+            case ColormapType::Jet: {
+                color = GetJetColor(x);
+                break;
+            }
+            case ColormapType::Hot: {
+                color = GetHotColor(x);
+                break;
+            }
+            case ColormapType::Gray: {
+                color = GetGrayColor(x);
+                break;
+            }
+            case ColormapType::Magma: {
+                color = GetMagmaColor(x);
+                break;
+            }
+            case ColormapType::Inferno: {
+                color = GetInfernoColor(x);
+                break;
+            }
+            case ColormapType::Plasma: {
+                color = GetPlasmaColor(x);
+                break;
+            }
+            case ColormapType::Viridis: {
+                color = GetViridisColor(x);
+                break;
+            }
+            case ColormapType::Cividis: {
+                color = GetCividisColor(x);
+                break;
+            }
+            case ColormapType::Github: {
+                color = GetGithubColor(x);
+                break;
+            }
             default:
                 break;
         }
+        return color;
     }
 
     inline Color GetHeatColor(double x)

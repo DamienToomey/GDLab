@@ -1,11 +1,11 @@
 #include "gradientdescent/gradientdescent.h"
 
-int GradientDescent::m_curveId = 0;
+int GradientDescent::static_id = 0;
 
 GradientDescent::GradientDescent()
 {
-    setRotation(m_curveId);
-    GradientDescent::m_curveId++;
+    setId(static_id);
+    static_id++;
 
     m_hyperParameterToSetter["lr"] = &GradientDescent::setLr;
     m_hyperParameterToSetter["tol"] = &GradientDescent::setTol;
@@ -14,14 +14,6 @@ GradientDescent::GradientDescent()
     m_hyperParameterToSetter["beta2"] = &GradientDescent::setBeta2;
     m_hyperParameterToSetter["decayRate"] = &GradientDescent::setDecayRate;
     m_hyperParameterToSetter["rho"] = &GradientDescent::setRho;
-
-    m_hyperParameterToGetter["lr"] = &GradientDescent::lr;
-    m_hyperParameterToGetter["tol"] = &GradientDescent::tol;
-    m_hyperParameterToGetter["nIterMax"] = &GradientDescent::nIterMax;
-    m_hyperParameterToGetter["beta1"] = &GradientDescent::beta1;
-    m_hyperParameterToGetter["beta2"] = &GradientDescent::beta2;
-    m_hyperParameterToGetter["decayRate"] = &GradientDescent::decayRate;
-    m_hyperParameterToGetter["rho"] = &GradientDescent::rho;
 }
 
 void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializationPoint)
@@ -31,12 +23,12 @@ void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializatio
     m_dfdxEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->dfdx()));
     m_dfdzEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->dfdz()));
 
-    m_pointsTable.clear();
+    m_points.clear();
 
     m_xHat = initializationPoint.x(); // weight in Deep Learning
     m_zHat = initializationPoint.z(); // weight in Deep Learning
     m_cost = initializationPoint.y(); // <=> computeCostFunction(m_xHat, m_zHat);
-    m_pointsTable.push_back(QVector3D(m_xHat, m_cost, m_zHat));
+    m_points.push_back(QVector3D(m_xHat, m_cost, m_zHat));
 
     // Initialize partial derivatives such as the norm of the gradient is greater
     // than the tolerance chosen in the while loop of the child class
@@ -65,19 +57,19 @@ float GradientDescent::computeDfdz(float xHat, float zHat)
     return m_dfdzEngine.call(args).toNumber();
 }
 
-vector<QVector3D> GradientDescent::pointsTable()
+vector<QVector3D> GradientDescent::points()
 {
-    return m_pointsTable;
+    return m_points;
 }
 
-void GradientDescent::setRotation(int curveId)
+void GradientDescent::setId(int id)
 {
-    m_rotation = QQuaternion::fromAxisAndAngle(curveId, curveId, curveId, curveId);
+    m_id = id;
 }
 
-QQuaternion GradientDescent::rotation()
+int GradientDescent::id()
 {
-    return m_rotation;
+    return m_id;
 }
 
 float GradientDescent::lr() {
@@ -141,7 +133,7 @@ map<QString, GradientDescent::setterFunction> GradientDescent::hyperParameterToS
     return m_hyperParameterToSetter;
 }
 
-map<QString, GradientDescent::getterFunction> GradientDescent::hyperParameterToGetter()
+GradientDescent::~GradientDescent()
 {
-    return m_hyperParameterToGetter;
+    delete m_modifier;
 }

@@ -11,13 +11,16 @@
 #include <QtWidgets/QGroupBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QScrollArea>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QFormLayout>
 #include <QtWidgets/QMessageBox>
 #include <QtGui/QPainter>
 #include <QtGui/QScreen>
+#include <QtDataVisualization/QCustom3DItem>
 #include <QDebug>
-#include <QtWidgets/QLineEdit>
-#include <QMessageBox>
-#include <QDoubleSpinBox>
 
 #include "surfacegraph.h"
 
@@ -31,6 +34,8 @@
 #define TINYCOLORMAP_WITH_QT5
 #include "tinycolormap.hpp"
 
+using namespace tinycolormap;
+
 class SurfaceGraph; // forward declaration because of circular dependency between MainWindow and SurfaceGraph (https://stackoverflow.com/questions/625799/resolve-build-errors-due-to-circular-dependency-amongst-classes)
 
 class MainWindow : public QWidget
@@ -38,29 +43,25 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    MainWindow(Q3DSurface *graph, QWidget *container);
-    QLineEdit* dfdxLineEdit();
-    QLineEdit* dfdzLineEdit();
-    QLineEdit* fLineEdit();
+    explicit MainWindow(Q3DSurface *graph, QWidget *container);
+    ~MainWindow();
     enum Functions { InclinedTacoShell = 0, SqrtSin = 1, NarrowSaddle = 2, NonConvex = 3, WideSaddle = 4 };
     enum Views { Surface3D = 0, RowSlice = 1, ColumnSlice = 2 };
-    enum GradientDescentMethods { _VanillaGradientDescent = 0,
-                                  _GradientDescentWithMomentum = 1,
-                                  _NesterovMomentum = 2,
-                                  _AdaGrad = 3,
-                                  _RMSProp = 4,
-                                  _Adam = 5};
+    QLineEdit* dfdxLineEdit();
+    QLineEdit* dfdzLineEdit();
+    QLineEdit* costFunctionLineEdit();
     QVector3D selectedPoint();
-    bool pointIsOnSurface(QPoint selectedPoint);
-    void setPointIsSelected(bool pointIsSelected);
     Q3DSurface* graph();
-    SurfaceGraph* modifier();
-    bool pointIsSelected();
     QPushButton* cameraPOVButton();
-    void initializeInitializationPointRandomly();
-    vector<GradientDescent*> visibleCurvesMemory();
     void togglePoints(GradientDescent *gradientDescentMethod, bool showCurve);
     void plotPoints(GradientDescent *gradientDescentMethod);
+    void initializeInitializationPointRandomly();
+    void setPointIsSelected(bool pointIsSelected);
+    bool pointIsOnSurface(QPoint selectedPoint);
+    bool pointIsSelected();
+    SurfaceGraph* modifier();
+    vector<GradientDescent*> visibleCurvesMemory();
+    map<int, QLinearGradient> intToLinearGradient();
 
 public Q_SLOTS:
     void resetCamera();
@@ -72,51 +73,57 @@ public Q_SLOTS:
     void runGradientDescent();
     void toggleCurve(bool checked);
     void toggleCurves();
-    void setSelectedYPoint(double temp);
     void resetValues();
+    void checkAllCheckboxes();
 
 private:
-    Q3DSurface *m_graph;
     QWidget *m_container;
     QWidget *m_widget;
+    Q3DSurface *m_graph;
     SurfaceGraph *m_modifier;
     QSlider *m_axisMinSliderX;
     QSlider *m_axisMaxSliderX;
     QSlider *m_axisMinSliderZ;
     QSlider *m_axisMaxSliderZ;
-    QComboBox *m_themeList;
     QSlider *m_rotationSliderX;
     QSlider *m_rotationSliderY;
     QSlider *m_zoomSlider;
-    QPushButton *m_resetCameraButton;
-    QPushButton *m_cameraPOVButton;
-    QLineEdit *m_fLineEdit;
-    QLineEdit *m_dfdxLineEdit;
-    QLineEdit *m_dfdzLineEdit;
-    QPushButton *m_computePartialDerivativesButton;
-    QComboBox *m_functionList;
+    QComboBox *m_themeList;
+    QComboBox *m_costFunctionList;
     QComboBox *m_viewList;
     QComboBox *m_colormapList;
     QComboBox *m_surfaceList;
-    QVector3D m_selectedPoint;
-    QPushButton *m_runGradientDescentButton;
-    bool m_pointIsSelected = false;
     QComboBox *m_gradientDescentCurveList;
-    map<GradientDescentMethods, GradientDescent*> m_gdName2gdObject;
+    QPushButton *m_resetCameraButton;
+    QPushButton *m_cameraPOVButton;
+    QPushButton *m_computePartialDerivativesButton;
+    QPushButton *m_runGradientDescentButton;
+    QPushButton *m_toggleCurvesButton;
+    QPushButton *m_resetValuesButton;
+    QPushButton *m_checkAllCheckboxesButton;
+    QLineEdit *m_costFunctionLineEdit;
+    QLineEdit *m_dfdxLineEdit;
+    QLineEdit *m_dfdzLineEdit;
     QDoubleSpinBox *m_xSpinBox;
     QDoubleSpinBox *m_ySpinBox;
     QDoubleSpinBox *m_zSpinBox;
-    QString key(MainWindow::GradientDescentMethods gradientDescentMethod, QString hyperParameter);
+    QVector3D m_selectedPoint;
+    QCustom3DItem *m_previousItem = new QCustom3DItem();
+    bool m_pointIsSelected = false;
+
+    map<QString, QPushButton*> m_gradientDescentMethodToPushButton;
+    map<QString, QCheckBox*> m_gradientDescentMethodToCheckBox;
+    map<QString, QDoubleSpinBox*> m_keyToSpinBox;
+    QString key(QString gradientDescentMethod, QString hyperParameter);
+    map<QString, GradientDescent*> m_gradientDescentMethodToGradientDescent;
+    map<QString, int> m_gradientDescentMethodToInt;
+    map<int, QString> m_intToGradientDescentMethod;
+    map<int, QLinearGradient> m_intToLinearGradient;
+
+    QScrollArea* initializeScrollArea(QScrollArea *scrollArea);
     void initializeLeftVLayout(QVBoxLayout *leftVLayout);
     void initializeRightVLayout(QVBoxLayout *rightVLayout);
-    map<QString, QDoubleSpinBox*> m_keyToSpinBox;
     void setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter);
-    map<MainWindow::GradientDescentMethods, QPushButton*> m_gradientDescentMethodToPushButton;
-    map<MainWindow::GradientDescentMethods, QCheckBox*> m_gradientDescentMethodToCheckBox;
-    QPushButton *m_toggleCurvesButton;
-    QPushButton *m_resetValuesButton;
-    QCustom3DItem *m_previousItem = new QCustom3DItem();
-
 };
 
 #endif // MAINWINDOW_H

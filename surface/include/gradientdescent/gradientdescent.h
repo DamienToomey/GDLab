@@ -2,7 +2,6 @@
 #define GRADIENTDESCENT_H
 
 #include "include/surfacegraph.h"
-#include <QtDataVisualization/QCustom3DItem>
 
 #include<cmath>
 #include <vector>
@@ -11,17 +10,36 @@ class GradientDescent
 {
 public:
     GradientDescent();
+    virtual ~GradientDescent();
     virtual vector<QVector3D> run() = 0; // pure virtual method
-    float computeCostFunction(float xHat, float zHat);
-    float computeDfdx(float xHat, float zHat);
-    float computeDfdz(float xHat, float zHat);
-    vector<QVector3D> pointsTable();
+    virtual QList<QString> hyperParameters() = 0;
     virtual QColor color() = 0;
     virtual QString name() = 0;
     void initialize(SurfaceGraph *modifier, QVector3D selectedPoint);
-    QQuaternion rotation();
-    void setRotation(int curveId);
-    virtual QList<QString> hyperParameters() = 0;
+    float computeCostFunction(float xHat, float zHat);
+    float computeDfdx(float xHat, float zHat);
+    float computeDfdz(float xHat, float zHat);
+    int id();    
+    vector<QVector3D> points();
+    typedef void (GradientDescent::*setterFunction)(float x);
+    map<QString, setterFunction> hyperParameterToSetter();
+
+protected:
+    float m_xHat;
+    float m_zHat;
+    float m_dfdx;
+    float m_dfdz;
+    float m_cost;
+    float m_lr;
+    float m_tol;
+    float m_nIterMax;
+    float m_decayRate;
+    float m_beta1;
+    float m_beta2;
+    float m_rho;
+    int m_id;
+    vector<QVector3D> m_points;
+
     virtual float lr();
     virtual void setLr(float lr);
     virtual float tol();
@@ -36,34 +54,16 @@ public:
     virtual void setDecayRate(float decayRate);
     virtual float rho();
     virtual void setRho(float rho);
-    typedef void (GradientDescent::*setterFunction)(float x);
-    typedef float (GradientDescent::*getterFunction)();
-    map<QString, setterFunction> hyperParameterToSetter();
-    map<QString, getterFunction> hyperParameterToGetter();
 
-protected:
-    SurfaceGraph *m_modifier;
-    float m_xHat;
-    float m_zHat;
-    float m_dfdx;
-    float m_dfdz;
-    float m_cost;
+private:
+    static int static_id;
     QJSValue m_costFunctionEngine;
     QJSValue m_dfdxEngine;
     QJSValue m_dfdzEngine;
     QJSEngine m_engine;
-    vector<QVector3D> m_pointsTable;
-    static int m_curveId;
-    QQuaternion m_rotation;
-    float m_lr;
-    float m_tol;
-    float m_nIterMax;
-    float m_decayRate;
-    float m_beta1;
-    float m_beta2;
-    float m_rho;
+    SurfaceGraph *m_modifier;
     map<QString, setterFunction> m_hyperParameterToSetter;
-    map<QString, getterFunction> m_hyperParameterToGetter;
+    void setId(int id);
 };
 
 #endif // GRADIENTDESCENT_H

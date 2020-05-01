@@ -31,26 +31,11 @@
 #define SURFACEGRAPH_H
 
 #include <QtDataVisualization/Q3DSurface>
-#include <QtDataVisualization/QSurfaceDataProxy>
-#include <QtDataVisualization/QSurface3DSeries>
+
 #include <QtWidgets/QSlider>
-#include <QtCore/QPropertyAnimation>
+#include <QtWidgets/QLineEdit>
 #include <QJSEngine>
 #include <QJSValue>
-#include <QJSValueList>
-#include <QString>
-#include <string>
-#include <QtDataVisualization/QValue3DAxis>
-#include <QtDataVisualization/Q3DTheme>
-#include <QtGui/QImage>
-#include <QtCore/qmath.h>
-#include <QRegularExpression>
-#include <QRegularExpressionMatch>
-#include <QCoreApplication>
-#include <QtWidgets/QLineEdit>
-
-#define TINYCOLORMAP_WITH_QT5
-#include "tinycolormap.hpp"
 
 using namespace QtDataVisualization;
 using namespace std;
@@ -64,9 +49,14 @@ class SurfaceGraph : public QObject
 public:
     explicit SurfaceGraph(MainWindow *mainWindow);
     ~SurfaceGraph();
-
+    QString executeSystemCommand(QString cmd);
+    QSurface3DSeries* series();
+    QString costFunction();
+    QString dfdx();
+    QString dfdz();
+    QSurfaceDataProxy* proxy();
+    QJSValue costFunctionEngine();
     void enableSqrtSinModel(bool enable);
-
     void toggleModeItem() { m_graph->setSelectionMode(QAbstract3DGraph::SelectionItem); }
     void toggleModeSliceRow() { m_graph->setSelectionMode(QAbstract3DGraph::SelectionItemAndRow
                                                           | QAbstract3DGraph::SelectionSlice); }
@@ -76,17 +66,22 @@ public:
     void setAxisMaxSliderX(QSlider *slider) { m_axisMaxSliderX = slider; }
     void setAxisMinSliderZ(QSlider *slider) { m_axisMinSliderZ = slider; }
     void setAxisMaxSliderZ(QSlider *slider) { m_axisMaxSliderZ = slider; }
-
     void adjustXMin(int min);
     void adjustXMax(int max);
     void adjustZMin(int min);
     void adjustZMax(int max);
-
     void rotateX(int rotation);
     void rotateY(int rotation);
     void zoom(int zoomLevel);
-    void changePresetCamera();
+    void setCameraPreset();
     void resetCamera();
+    void resetRange();
+    void drawModel(QString arithmeticExpression);
+    void setAxisXRange(float min, float max);
+    void setAxisZRange(float min, float max);
+    void fillProxy(QJSValue costFunctionEngine);
+    void computePartialDerivatives();
+    void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
     float originalXRotation();
     float originalYRotation();
     float originalZoomLevel();
@@ -94,41 +89,31 @@ public:
     float yRotation();
     float zoomLevel();
     int cameraPreset();
-    void resetRange();
-    void drawModel(QString arithmeticExpression);
-    void setAxisXRange(float min, float max);
-    void setAxisZRange(float min, float max);
-    void fillProxy(QJSValue costFunctionEngine);
-    QString executeSystemCommand(QString cmd);
-    void computePartialDerivatives();
-    void resetColormap();
-    void setColormap(tinycolormap::ColormapType colormap);
-    QSurface3DSeries* series();
-    QString costFunction();
-    QString dfdx();
-    QString dfdz();
-    void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
     bool partialDerivarivesAreComputed();
-    QSurfaceDataProxy* proxy();
-    QJSValue costFunctionEngine();
+
 
 public Q_SLOTS:
-    void changeTheme(int theme);
-    void changeCostFunction(int function);
-    void changeSelectionMode(int selectionMode);
-    void changeColormap(int colormap);
-    void changeSurface(int surface);
     Q3DSurface* graph();
+    void setTheme(int theme);
+    void setCostFunction(int function);
+    void setSelectionMode(int selectionMode);
+    void setColormap(int colormap);
+    void setSurface(int surface);
 
 private:
     Q3DSurface *m_graph;
     QSurfaceDataProxy *m_proxy;
     QSurface3DSeries *m_series;
-
+    QJSEngine m_arithmeticEngine;
+    QJSValue m_costFunctionEngine;
+    QString m_rawCostFunction;
     QSlider *m_axisMinSliderX;
     QSlider *m_axisMaxSliderX;
     QSlider *m_axisMinSliderZ;
     QSlider *m_axisMaxSliderZ;
+    QString m_dfdx;
+    QString m_dfdz;
+    QString m_costFunction;
     float m_rangeMinX;
     float m_rangeMinZ;
     float m_stepX;
@@ -140,23 +125,18 @@ private:
     float m_originalYRotation;
     float m_originalZoomLevel;
     int m_cameraPreset;
-    QJSEngine m_arithmeticEngine;
-    QString m_rawCostFunction;
     bool m_costFunctionIsValid;
-    void setPointIsSelected(bool pointIsSelected);
-    QString m_dfdx;
-    QString m_dfdz;
+    bool m_partialDerivarivesAreComputed;
     MainWindow *m_mainWindow;
-    QString m_costFunction;
+
     QString preprocessArithmeticExpression(QString arithmeticExpression);
     QString mathjsPowerSymbolToJavascriptPowerSymbol(QString arithmeticExpression);
     QString javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeticExpression);
     QString computePartialDerivative(char variable);
+    QString formatArithmeticExpression(QString arithmeticExpression);
     void setLineEditText(QLineEdit *lineEdit, QString text);
     void customizeAxes();
-    QString formatArithmeticExpression(QString arithmeticExpression);
-    bool m_partialDerivarivesAreComputed;
-    QJSValue m_costFunctionEngine;
+    void setPointIsSelected(bool pointIsSelected);
 };
 
 #endif // SURFACEGRAPH_H

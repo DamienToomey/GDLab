@@ -83,6 +83,7 @@ void SurfaceGraph::customizeAxes()
 SurfaceGraph::~SurfaceGraph()
 {
     delete m_graph;
+    delete m_mainWindow;
 }
 
 void SurfaceGraph::fillProxy(QJSValue costFunctionEngine)
@@ -224,7 +225,7 @@ void SurfaceGraph::drawModel(QString arithmeticExpression)
 
 void SurfaceGraph::resetRange()
 {
-    // Reset range sliders for Sqrt&Sin
+    // Reset range sliders for costFunction
     m_rangeMinX = sampleMin;
     m_rangeMinZ = sampleMin;
     m_stepX = (sampleMax - sampleMin) / float(sampleCountX - 1);
@@ -310,25 +311,9 @@ void SurfaceGraph::setAxisZRange(float min, float max)
     m_graph->axisZ()->setRange(min, max);
 }
 
-void SurfaceGraph::changeTheme(int theme)
+void SurfaceGraph::setTheme(int theme)
 {
     m_graph->activeTheme()->setType(Q3DTheme::Theme(theme));
-}
-
-void SurfaceGraph::resetColormap()
-{
-    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleUniform);
-}
-
-void SurfaceGraph::setColormap(tinycolormap::ColormapType colormap)
-{
-    QLinearGradient gr;
-    for (float i = 0; i<=1; i += 0.1) {
-        const QColor color = tinycolormap::GetColor(i, colormap).ConvertToQColor();
-        gr.setColorAt(i, color);
-    }
-    m_graph->seriesList().at(0)->setBaseGradient(gr);
-    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
 }
 
 void SurfaceGraph::rotateX(int rotation)
@@ -349,7 +334,7 @@ void SurfaceGraph::zoom(int zoomLevel)
     m_graph->scene()->activeCamera()->setZoomLevel(m_zoomLevel);
 }
 
-void SurfaceGraph::changePresetCamera()
+void SurfaceGraph::setCameraPreset()
 {
     if (m_cameraPreset >= Q3DCamera::CameraPresetFrontBelow) {
         m_cameraPreset = Q3DCamera::CameraPresetFrontLow;
@@ -495,7 +480,7 @@ int SurfaceGraph::cameraPreset()
     return m_cameraPreset;
 }
 
-void SurfaceGraph::changeCostFunction(int function)
+void SurfaceGraph::setCostFunction(int function)
 {
     QString arithmeticExpression;
 
@@ -525,13 +510,13 @@ void SurfaceGraph::changeCostFunction(int function)
         default:
             break;
     }
-    setLineEditText(m_mainWindow->fLineEdit(), arithmeticExpression);
+    setLineEditText(m_mainWindow->costFunctionLineEdit(), arithmeticExpression);
     setLineEditText(m_mainWindow->dfdxLineEdit(), "");
     setLineEditText(m_mainWindow->dfdzLineEdit(), "");
     drawModel(arithmeticExpression);
 }
 
-void SurfaceGraph::changeSelectionMode(int selectionMode)
+void SurfaceGraph::setSelectionMode(int selectionMode)
 {
     switch (selectionMode) {
         case MainWindow::Surface3D: {
@@ -551,59 +536,15 @@ void SurfaceGraph::changeSelectionMode(int selectionMode)
     }
 }
 
-void SurfaceGraph::changeColormap(int colormap)
+void SurfaceGraph::setColormap(int colormap)
 {
-    switch (colormap) {
-        case 0: {
-            resetColormap();
-            break;
-        }
-        case 1: {
-            setColormap(tinycolormap::ColormapType::Heat);
-            break;
-        }
-        case 2: {
-            setColormap(tinycolormap::ColormapType::Jet);
-            break;
-        }
-        case 3: {
-            setColormap(tinycolormap::ColormapType::Hot);
-            break;
-        }
-        case 4: {
-            setColormap(tinycolormap::ColormapType::Gray);
-            break;
-        }
-        case 5: {
-            setColormap(tinycolormap::ColormapType::Magma);
-            break;
-        }
-        case 6: {
-            setColormap(tinycolormap::ColormapType::Inferno);
-            break;
-        }
-        case 7: {
-            setColormap(tinycolormap::ColormapType::Plasma);
-            break;
-        }
-        case 8: {
-            setColormap(tinycolormap::ColormapType::Viridis);
-            break;
-        }
-        case 9: {
-            setColormap(tinycolormap::ColormapType::Cividis);
-            break;
-        }
-        case 10: {
-            setColormap(tinycolormap::ColormapType::Github);
-            break;
-        }
-        default:
-            break;
-    }
+    map<int, QLinearGradient> intToLinearGradient = m_mainWindow->intToLinearGradient();
+    QLinearGradient gr = intToLinearGradient[colormap];
+    m_graph->seriesList().at(0)->setBaseGradient(gr);
+    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
 }
 
-void SurfaceGraph::changeSurface(int surface)
+void SurfaceGraph::setSurface(int surface)
 {
     switch (surface) {
         case 0: {
