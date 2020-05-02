@@ -124,16 +124,18 @@ void MainWindow::runGradientDescent()
     m_graph->removeCustomItems();
     QCoreApplication::processEvents(QEventLoop::AllEvents); // leave time for Qt to process removeCustomItems
 
+    // take QDoubleSpinBox values and set them in the respective gradient descent methods
     map<QString, QDoubleSpinBox*>::iterator it;
     for (it = m_keyToSpinBox.begin(); it != m_keyToSpinBox.end(); ++it) {
         QString gradientDescentMethod = it->first.split("_")[0];
         QString hyperParameter = it->first.split("_")[1];        
         GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[gradientDescentMethod];
-        (gradientDescent->*gradientDescent->hyperParameterToSetter()[hyperParameter])((float)it->second->value());
+        gradientDescent->setHyperParameterValue(hyperParameter, it->second->value());
     }
 
     if (!pointIsSelected()) {
         initializeInitializationPointRandomly();
+        setPointIsSelected(false);
     }
 
     if (m_modifier->partialDerivarivesAreComputed()) {
@@ -183,7 +185,7 @@ void MainWindow::plotPoints(GradientDescent *gradientDescentMethod)
     QImage image = QImage(2, 2, QImage::Format_RGB32);
     image.fill(gradientDescentMethod->color());
     for (vector<QVector3D>::iterator it=points.begin(); it!=points.end(); ++it) {
-        QCustom3DItem *item = new QCustom3DItem(":/sphere/sphere", *it,
+        QCustom3DItem *item = new QCustom3DItem(":/sphere.obj", *it,
                                                 QVector3D(0.02f, 0.02f, 0.02f),
                                                 QQuaternion::fromAxisAndAngle(0.0f, 0.0f, 0.0f, 0.0f),
                                                 image);
@@ -531,20 +533,27 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
     QVBoxLayout *scrollLayout = new QVBoxLayout(scrollWidget);
 
     // -----
+    m_resultButton = new QPushButton(tr("Show results"), m_widget);
+    scrollLayout->addWidget(m_resultButton);
+    QObject::connect(m_resultButton, SIGNAL(clicked()),
+                     this, SLOT(openResultWindow()));
+    // -----
     m_toggleCurvesButton = new QPushButton(tr("Toggle curves"), m_widget);
+    m_toggleCurvesButton->setCheckable(true);
     scrollLayout->addWidget(m_toggleCurvesButton);
-    QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
-                     this, SLOT(toggleCurves()));
+    QObject::connect(m_toggleCurvesButton, SIGNAL(clicked(bool)),
+                     this, SLOT(toggleCurves(bool)));
     // -----
-    m_toggleCurvesButton = new QPushButton(tr("Reset values"), m_widget);
-    scrollLayout->addWidget(m_toggleCurvesButton);
-    QObject::connect(m_toggleCurvesButton, SIGNAL(pressed()),
+    m_toggleCheckboxesButton = new QPushButton(tr("Toggle checkboxes"), m_widget);
+    m_toggleCheckboxesButton->setCheckable(true);
+    scrollLayout->addWidget(m_toggleCheckboxesButton);
+    QObject::connect(m_toggleCheckboxesButton, SIGNAL(clicked(bool)),
+                     this, SLOT(toggleCheckboxes(bool)));
+    // -----
+    m_resetValuesButton = new QPushButton(tr("Reset values"), m_widget);
+    scrollLayout->addWidget(m_resetValuesButton);
+    QObject::connect(m_resetValuesButton, SIGNAL(pressed()),
                      this, SLOT(resetValues()));
-    // -----
-    m_checkAllCheckboxesButton = new QPushButton(tr("Select all"), m_widget);
-    scrollLayout->addWidget(m_checkAllCheckboxesButton);
-    QObject::connect(m_checkAllCheckboxesButton, SIGNAL(pressed()),
-                     this, SLOT(checkAllCheckboxes()));
     // -----
 
     const int width = 20;
@@ -584,6 +593,7 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
         int i = 0;
         int j = 0;
         QGridLayout *gridLayout = new QGridLayout();
+
         for (QString hyperParameter : it->second->hyperParameters()) {
            if (j == 2) {
                 i++;
@@ -600,7 +610,7 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
                spinBox->setRange(-100, 100);
                spinBox->setDecimals(4);
            }
-           setPredefinedValues(spinBox, hyperParameter);
+           spinBox->setValue(it->second->hyperParameterDefaultValue(hyperParameter));
 
            gridLayout->addWidget(spinBox, i, j);
            j++;
@@ -618,40 +628,12 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
     leftVLayout->addWidget(scrollArea);
 }
 
-void MainWindow::setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter)
-{
-    if (hyperParameter == "lr") {
-        spinBox->setValue(1e-3);
-    }
-    else if (hyperParameter == "tol") {
-        spinBox->setValue(0.005);
-    }
-    else if (hyperParameter == "nIterMax") {
-        spinBox->setValue(10000);
-    }
-    else if (hyperParameter == "beta1") {
-        spinBox->setValue(0.9);
-    }
-    else if (hyperParameter == "beta2") {
-        spinBox->setValue(0.999);
-    }
-    else if (hyperParameter == "decayRate") {
-        spinBox->setValue(0.9);
-    }
-    else if (hyperParameter == "rho") {
-        spinBox->setValue(0.9);
-    }
-    else {
-        qDebug() << "Problem in setPredefinedValues";
-    }
-}
-
-void MainWindow::toggleCurves()
+void MainWindow::toggleCurves(bool checked)
 {
     map<QString, QPushButton*>::iterator it;
     for (it = m_gradientDescentMethodToPushButton.begin(); it != m_gradientDescentMethodToPushButton.end(); ++it) {
         QPushButton *button = it->second;
-        button->setChecked(!button->isChecked());
+        button->setChecked(checked);
     }
 }
 
@@ -659,17 +641,19 @@ void MainWindow::resetValues()
 {
     map<QString, QDoubleSpinBox*>::iterator it;
     for (it = m_keyToSpinBox.begin(); it != m_keyToSpinBox.end(); ++it) {
+        QString gradientDescentMethod = it->first.split("_")[0];
         QString hyperParameter = it->first.split("_")[1];
-        QDoubleSpinBox *spinBox = it->second;
-        setPredefinedValues(spinBox, hyperParameter);
+        QDoubleSpinBox *spinBox = it->second;        
+        GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[gradientDescentMethod];
+        spinBox->setValue(gradientDescent->hyperParameterDefaultValue(hyperParameter));
     }
 }
 
-void MainWindow::checkAllCheckboxes()
+void MainWindow::toggleCheckboxes(bool checked)
 {
     map<QString, QCheckBox*>::iterator it;
     for (it = m_gradientDescentMethodToCheckBox.begin(); it != m_gradientDescentMethodToCheckBox.end(); ++it) {
-        it->second->setChecked(true);
+        it->second->setChecked(!checked);
     }
 }
 
@@ -686,4 +670,55 @@ MainWindow::~MainWindow()
     for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
         delete it->second;
     }
+}
+
+void MainWindow::openResultWindow()
+{
+    QTableWidget *tableWidget = new QTableWidget();
+    tableWidget->setRowCount(m_gradientDescentMethodToGradientDescent.size()+1);
+    tableWidget->setColumnCount(5);
+
+    int row = 1;
+    int column = 0;
+
+    map<QString, float>::iterator ite;
+    map<QString, GradientDescent*>::iterator it;
+    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
+        QTableWidgetItem *newItem = new QTableWidgetItem(it->second->name());
+        tableWidget->setItem(row, column, newItem);
+        row++;
+    }
+
+    row = 0;
+    column = 1;
+    it = m_gradientDescentMethodToGradientDescent.begin();
+    map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
+    for (ite = statisticLabelToValue.begin(); ite != statisticLabelToValue.end(); ++ite) {
+        QTableWidgetItem *newItem = new QTableWidgetItem(ite->first);
+        tableWidget->setItem(row, column, newItem);
+        column++;
+    }
+
+    row = 1;
+    column = 1;
+
+    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
+        column = 1;
+        map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
+        for (ite = statisticLabelToValue.begin(); ite != statisticLabelToValue.end(); ++ite) {
+            QTableWidgetItem *newItem = new QTableWidgetItem(QString("%1").arg(ite->second));
+            tableWidget->setItem(row, column, newItem);
+            column++;
+        }
+        row++;
+    }
+
+    tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers); // table in read mode only
+    tableWidget->resizeColumnsToContents(); //setResizeMode(QHeaderView::Stretch);
+
+    ResultWindow *fenetreCode = new ResultWindow(tableWidget, m_widget);
+    fenetreCode->setModal(false);
+    fenetreCode->setWindowFlags(Qt::Window); // adds reduce and resize buttons to title bar
+    fenetreCode->resize(tableWidget->columnCount()*110, tableWidget->rowCount()*35);
+    fenetreCode->show();
 }

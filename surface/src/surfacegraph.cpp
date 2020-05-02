@@ -49,6 +49,9 @@ SurfaceGraph::SurfaceGraph(MainWindow *mainWindow)
     m_yRotation = m_originalYRotation;
     m_zoomLevel = m_originalZoomLevel;
 
+//    m_evaluateFunction = initializeJSEngine(":/mathjs_evaluate.mjs", "evaluate");
+    m_derivativeFunction = initializeJSEngine(":/mathjs_derivative.mjs", "derivative");
+
     customizeAxes();
 
     m_proxy = new QSurfaceDataProxy();
@@ -56,6 +59,20 @@ SurfaceGraph::SurfaceGraph(MainWindow *mainWindow)
     m_series->setDrawMode(QSurface3DSeries::DrawSurfaceAndWireframe);
     m_series->setFlatShadingEnabled(true);
     m_graph->setShadowQuality(QAbstract3DGraph::ShadowQualityNone);
+}
+
+QJSValue SurfaceGraph::initializeJSEngine(QString moduleName, QString functionName)
+{
+    QJSValue module = m_JSEngine.importModule(moduleName);
+
+    if (module.isError()) {
+        qDebug() << "Uncaught exception in initializeJSEngine"
+                 << module.property("fileName").toString()
+                 << module.property("lineNumber").toInt()
+                 << ":" << module.toString();
+    }
+    QJSValue jsFunction = module.property(functionName);
+    return jsFunction;
 }
 
 void SurfaceGraph::customizeAxes()
@@ -86,7 +103,7 @@ SurfaceGraph::~SurfaceGraph()
     delete m_mainWindow;
 }
 
-void SurfaceGraph::fillProxy(QJSValue costFunctionEngine)
+void SurfaceGraph::fillProxy(QString function)
 {
     float stepX = (sampleMax - sampleMin) / float(sampleCountX - 1);
     float stepZ = (sampleMax - sampleMin) / float(sampleCountZ - 1);
@@ -101,9 +118,8 @@ void SurfaceGraph::fillProxy(QJSValue costFunctionEngine)
         int index = 0;
         for (int j = 0; j < sampleCountX; j++) {
             float x = qMin(sampleMax, (j * stepX + sampleMin));
-            QJSValueList args;
-            args << x << z;
-            float y = costFunctionEngine.call(args).toNumber();
+            float y = evaluateFunction(function, x, z);
+            //float y = evaluateFunction(function, x, z);
             (*newRow)[index++].setPosition(QVector3D(x, y, z));
         }
         *dataArray << newRow;
@@ -111,14 +127,14 @@ void SurfaceGraph::fillProxy(QJSValue costFunctionEngine)
     m_proxy->resetArray(dataArray);
 }
 
-QString SurfaceGraph::formatArithmeticExpression(QString arithmeticExpression)
+QString SurfaceGraph::cleanArithmeticExpression(QString arithmeticExpression)
 {
     return arithmeticExpression.toLower().simplified().remove(' ');
 }
 
 QString SurfaceGraph::preprocessArithmeticExpression(QString arithmeticExpression)
 {
-    arithmeticExpression = formatArithmeticExpression(arithmeticExpression);
+    arithmeticExpression = cleanArithmeticExpression(arithmeticExpression);
 
     QRegExp rx("(\\b(?![xz])[a-z]+[0-9]*(?![\\(])\\b)");
     /**
@@ -151,14 +167,19 @@ QString SurfaceGraph::javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeti
     return arithmeticExpression.replace("**", "^");
 }
 
-QString SurfaceGraph::computePartialDerivative(char variable)
+QString SurfaceGraph::computePartialDerivative(QString function, QString variable)
 {
-   QString dfdx = executeSystemCommand(QString("mathjs \"derivative('%1', '%2')\"").arg(
-                                       javascriptPowerSymbolToMathjsPowerSymbol(m_rawCostFunction),
-                                       QString(variable)));
-   dfdx = dfdx.trimmed();
-   dfdx = mathjsPowerSymbolToJavascriptPowerSymbol(dfdx);
-   dfdx = preprocessArithmeticExpression(dfdx);
+   QJSValueList args;
+   args << m_functionToArithmeticExpression[function].toStdString().c_str() << variable;
+   QJSValue result = m_derivativeFunction.call(args);
+
+   if (result.isError()) {
+       qDebug() << "Uncaught exception in computePartialDerivative"
+                << result.property("fileName").toString()
+                << result.property("lineNumber").toInt()
+                << ":" << result.toString();
+   }
+   QString dfdx = result.toString();
    return dfdx;
 }
 
@@ -171,53 +192,69 @@ void SurfaceGraph::setLineEditText(QLineEdit *lineEdit, QString text)
 void SurfaceGraph::computePartialDerivatives()
 {
     if (m_costFunctionIsValid) {
-        m_dfdx = computePartialDerivative('x');
-        setLineEditText(m_mainWindow->dfdxLineEdit(), m_dfdx);
-        m_dfdz = computePartialDerivative('z');
-        setLineEditText(m_mainWindow->dfdzLineEdit(), m_dfdz);
+        QString dfdx = computePartialDerivative("f", "x");
+        dfdx = mathjsPowerSymbolToJavascriptPowerSymbol(dfdx);
+        setLineEditText(m_mainWindow->dfdxLineEdit(), dfdx);
+        m_functionToEvaluateFunction["dfdx"] = m_JSEngine.evaluate(
+                    QString("(function(x, z) { return %1 ; })").arg(
+                            preprocessArithmeticExpression(dfdx)
+                    ));
+        m_functionToArithmeticExpression["dfdx"] = dfdx;
+
+        QString dfdz = computePartialDerivative("f", "z");
+        dfdz = mathjsPowerSymbolToJavascriptPowerSymbol(dfdz);
+        setLineEditText(m_mainWindow->dfdzLineEdit(), dfdz);
+        m_functionToEvaluateFunction["dfdz"] = m_JSEngine.evaluate(
+                    QString("(function(x, z) { return %1 ; })").arg(
+                            preprocessArithmeticExpression(dfdz)
+                    ));
+        m_functionToArithmeticExpression["dfdz"] = dfdz;
+
         setPartialDerivarivesAreComputed(true);
     }
 }
 
-QString SurfaceGraph::executeSystemCommand(QString cmd)
+float SurfaceGraph::evaluateFunction(QString function, float x, float z)
 {
-    string data;
-    FILE *stream;
-    const int max_buffer = 256;
-    char buffer[max_buffer];
-    cmd.append(" 2>&1");
-
-    stream = popen(cmd.toStdString().c_str(), "r");
-    if (stream)
-    {
-        while (!feof(stream)) {
-            if (fgets(buffer, max_buffer, stream) != NULL) {
-                data.append(buffer);
-            }
-        }
-        pclose(stream);
-    }
-    return QString::fromStdString(data);
+    QJSValueList args;
+    args << x << z;
+    float y = m_functionToEvaluateFunction[function].call(args).toNumber();
+    return y;
 }
+//float SurfaceGraph::evaluateFunction(QString function, double x, double z)
+//{
+//   QJSValueList args;
+//   args << m_functionToArithmeticExpression[function] << x << z;
+//   QJSValue result = m_evaluateFunction.call(args);
+
+//   if (result.isError()) {
+//       qDebug() << "Uncaught exception in evaluateFunction"
+//                << result.property("fileName").toString()
+//                << result.property("lineNumber").toInt()
+//                << ":" << result.toString();
+//   }
+//   return result.toNumber();
+//}
 
 void SurfaceGraph::drawModel(QString arithmeticExpression)
 {
     m_graph->removeCustomItems();
     m_costFunctionIsValid = true;
     setPartialDerivarivesAreComputed(false);
-    m_rawCostFunction = formatArithmeticExpression(arithmeticExpression);
-    m_costFunction = preprocessArithmeticExpression(arithmeticExpression);
-    m_costFunctionEngine = m_arithmeticEngine.evaluate(
-                QString("(function(x, z) { return %1 ; })").arg(m_costFunction));
 
+    m_functionToEvaluateFunction["f"] = m_JSEngine.evaluate(
+                QString("(function(x, z) { return %1 ; })").arg(
+                    preprocessArithmeticExpression(arithmeticExpression)
+                ));
 
-    if (m_costFunctionEngine.isError()) {
+    if (m_functionToEvaluateFunction["f"].isError()) {
         qDebug() << "The expression is not valid";
         m_costFunctionIsValid = false;
     }
     else {
+        m_functionToArithmeticExpression["f"] = javascriptPowerSymbolToMathjsPowerSymbol(cleanArithmeticExpression(arithmeticExpression));
         m_graph->axisY()->setAutoAdjustRange(true);
-        fillProxy(m_costFunctionEngine);
+        fillProxy("f");
         m_graph->addSeries(m_series);
         resetRange();
     }
@@ -252,11 +289,6 @@ void SurfaceGraph::adjustXMin(int min)
     float maxX = m_stepX * max + m_rangeMinX;
 
     setAxisXRange(minX, maxX);
-}
-
-QJSValue SurfaceGraph::costFunctionEngine()
-{
-    return m_costFunctionEngine;
 }
 
 void SurfaceGraph::adjustXMax(int max)
@@ -486,20 +518,20 @@ void SurfaceGraph::setCostFunction(int function)
 
     switch (function) {
         case MainWindow::InclinedTacoShell: {
-            arithmeticExpression = "500*x**2+500*z";
+            arithmeticExpression = "500 * x ** 2 + 500 * z";
             break;
         }
         case MainWindow::SqrtSin: {
-            QString R = "(sqrt(z**2 + x**2) + 0.01)";
+            QString R = "(sqrt( z** 2 + x ** 2) + 0.01)";
             arithmeticExpression = QString("(sin(%1) / %1 + 0.24) * 1.61").arg(R);
             break;
         }
         case MainWindow::NarrowSaddle: {
-            arithmeticExpression = "x**2 - z**2";
+            arithmeticExpression = "x ** 2 - z ** 2";
             break;
         }
         case MainWindow::NonConvex: {
-            arithmeticExpression = "3*exp(-(z+1)**2-x**2)*(x-1)**2-exp(-(x+1)**2-z**2)/3+exp(-x**2-z**2)*(10*x**3-2*x+10*z**5)"; //
+            arithmeticExpression = "3 * exp(- (z+1) ** 2- x ** 2) * (x-1) ** 2 - exp( - (x+1) ** 2 - z ** 2) / 3 + exp( - x ** 2 - z ** 2) * (10 * x ** 3 - 2 * x + 10 * z ** 5)";
             // Function found here : https://fr.mathworks.com/help/symbolic/graphics.html
             break;
         }
@@ -569,21 +601,6 @@ QSurface3DSeries* SurfaceGraph::series()
     return m_series;
 }
 
-QString SurfaceGraph::costFunction()
-{
-    return m_costFunction;
-}
-
-QString SurfaceGraph::dfdx()
-{
-    return m_dfdx;
-}
-
-QString SurfaceGraph::dfdz()
-{
-    return m_dfdz;
-}
-
 Q3DSurface* SurfaceGraph::graph()
 {
     return m_graph;
@@ -602,3 +619,4 @@ bool SurfaceGraph::partialDerivarivesAreComputed()
 QSurfaceDataProxy* SurfaceGraph::proxy() {
     return m_proxy;
 }
+

@@ -78,7 +78,7 @@ public:
     void drawModel(QString arithmeticExpression);
     void setAxisXRange(float min, float max);
     void setAxisZRange(float min, float max);
-    void fillProxy(QJSValue costFunctionEngine);
+    void fillProxy(QString function);
     void computePartialDerivatives();
     void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
     float originalXRotation();
@@ -89,6 +89,8 @@ public:
     float zoomLevel();
     int cameraPreset();
     bool partialDerivarivesAreComputed();
+    QJSValue initializeJSEngine(QString module, QString property);
+    float evaluateFunction(QString function, float x, float z);
 
 
 public Q_SLOTS:
@@ -100,19 +102,17 @@ public Q_SLOTS:
     void setSurface(int surface);
 
 private:
+    QJSEngine m_JSEngine;
     Q3DSurface *m_graph;
     QSurfaceDataProxy *m_proxy;
     QSurface3DSeries *m_series;
-    QJSEngine m_arithmeticEngine;
-    QJSValue m_costFunctionEngine;
-    QString m_rawCostFunction;
+    QJSValue m_derivativeFunction;
     QSlider *m_axisMinSliderX;
     QSlider *m_axisMaxSliderX;
     QSlider *m_axisMinSliderZ;
     QSlider *m_axisMaxSliderZ;
-    QString m_dfdx;
-    QString m_dfdz;
-    QString m_costFunction;
+    map<QString, QString> m_functionToArithmeticExpression;
+    map<QString, QJSValue> m_functionToEvaluateFunction;
     float m_rangeMinX;
     float m_rangeMinZ;
     float m_stepX;
@@ -131,8 +131,8 @@ private:
     QString preprocessArithmeticExpression(QString arithmeticExpression);
     QString mathjsPowerSymbolToJavascriptPowerSymbol(QString arithmeticExpression);
     QString javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeticExpression);
-    QString computePartialDerivative(char variable);
-    QString formatArithmeticExpression(QString arithmeticExpression);
+    QString computePartialDerivative(QString function, QString variable);
+    QString cleanArithmeticExpression(QString arithmeticExpression);
     void setLineEditText(QLineEdit *lineEdit, QString text);
     void customizeAxes();
     void setPointIsSelected(bool pointIsSelected);

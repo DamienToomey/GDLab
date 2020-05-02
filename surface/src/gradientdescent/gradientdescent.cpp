@@ -7,21 +7,15 @@ GradientDescent::GradientDescent()
     setId(static_id);
     static_id++;
 
-    m_hyperParameterToSetter["lr"] = &GradientDescent::setLr;
-    m_hyperParameterToSetter["tol"] = &GradientDescent::setTol;
-    m_hyperParameterToSetter["nIterMax"] = &GradientDescent::setNIterMax;
-    m_hyperParameterToSetter["beta1"] = &GradientDescent::setBeta1;
-    m_hyperParameterToSetter["beta2"] = &GradientDescent::setBeta2;
-    m_hyperParameterToSetter["decayRate"] = &GradientDescent::setDecayRate;
-    m_hyperParameterToSetter["rho"] = &GradientDescent::setRho;
+    m_statisticLabelToValue["Execution time"] = 0;
+    m_statisticLabelToValue["Last cost value"] = 0;
+    m_statisticLabelToValue["Number of iterations"] = 0;
+    m_statisticLabelToValue["Reached nIterMax"] = 0;
 }
 
 void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializationPoint)
 {
     m_modifier = modifier;
-    m_costFunctionEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->costFunction()));
-    m_dfdxEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->dfdx()));
-    m_dfdzEngine = m_engine.evaluate(QString("(function(x, z) { return %1 ; })").arg(m_modifier->dfdz()));
 
     m_points.clear();
 
@@ -36,25 +30,19 @@ void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializatio
     m_dfdz = 1; // partial derivative (gradient in Deep Learning)
 }
 
-float GradientDescent::computeCostFunction(float xHat, float zHat)
+float GradientDescent::evaluateF(float xHat, float zHat)
 {
-    QJSValueList args;
-    args << xHat << zHat;
-    return m_costFunctionEngine.call(args).toNumber();
+    return m_modifier->evaluateFunction("f", xHat, zHat);
 }
 
-float GradientDescent::computeDfdx(float xHat, float zHat)
+float GradientDescent::evaluateDfdx(float xHat, float zHat)
 {
-    QJSValueList args;
-    args << xHat << zHat;
-    return m_dfdxEngine.call(args).toNumber();
+    return m_modifier->evaluateFunction("dfdx", xHat, zHat);
 }
 
-float GradientDescent::computeDfdz(float xHat, float zHat)
+float GradientDescent::evaluateDfdz(float xHat, float zHat)
 {
-    QJSValueList args;
-    args << xHat << zHat;
-    return m_dfdzEngine.call(args).toNumber();
+    return m_modifier->evaluateFunction("dfdz", xHat, zHat);
 }
 
 vector<QVector3D> GradientDescent::points()
@@ -72,68 +60,52 @@ int GradientDescent::id()
     return m_id;
 }
 
-float GradientDescent::lr() {
-    return m_lr;
-}
-
-void GradientDescent::setLr(float lr) {
-    m_lr = lr;
-}
-
-float GradientDescent::tol() {
-    return m_tol;
-}
-
-void GradientDescent::setTol(float tol) {
-    m_tol = tol;
-}
-
-float GradientDescent::nIterMax() {
-    return m_nIterMax;
-}
-
-void GradientDescent::setNIterMax(float nIterMax) {
-    m_nIterMax = nIterMax;
-}
-
-float GradientDescent::beta1() {
-    return m_beta1;
-}
-
-void GradientDescent::setBeta1(float beta1) {
-    m_beta1 = beta1;
-}
-
-float GradientDescent::beta2() {
-    return m_beta2;
-}
-
-void GradientDescent::setBeta2(float beta2) {
-    m_beta2 = beta2;
-}
-
-float GradientDescent::decayRate() {
-    return m_decayRate;
-}
-
-void GradientDescent::setDecayRate(float decayRate) {
-    m_decayRate = decayRate;
-}
-
-float GradientDescent::rho() {
-    return m_rho;
-}
-
-void GradientDescent::setRho(float rho) {
-    m_rho = rho;
-}
-
-map<QString, GradientDescent::setterFunction> GradientDescent::hyperParameterToSetter()
-{
-    return m_hyperParameterToSetter;
-}
-
 GradientDescent::~GradientDescent()
 {
     delete m_modifier;
+}
+
+void GradientDescent::setHyperParameterValue(QString hyperParameter, float value)
+{
+    m_hyperParameterToValue[hyperParameter] = value;
+}
+
+float GradientDescent::hyperParameterValue(QString hyperParameter)
+{
+    return m_hyperParameterToValue[hyperParameter];
+}
+
+float GradientDescent::hyperParameterDefaultValue(QString hyperParameter)
+{
+    return m_hyperParameterToDefaultValue[hyperParameter];
+}
+
+vector<QString> GradientDescent::hyperParameters()
+{
+    vector<QString> tab(m_hyperParameterToDefaultValue.size());
+
+    int i = 0;
+    tab[i] = "lr";
+    i++;
+    tab[i] = "tol";
+    i++;
+    tab[i] = "nIterMax";
+    i++;
+    // These previous lines are not nice but they allow the spinbox to appear in the
+    // same order for each Gradient Descent Method
+
+    map<QString, float>::iterator it;
+    for (it = m_hyperParameterToDefaultValue.begin(); it != m_hyperParameterToDefaultValue.end(); ++it) {
+        if (it->first != "lr" && it->first != "nIterMax" && it->first != "tol") {
+            tab[i] = it->first;
+            i++;
+        }
+    }
+
+    return tab;
+}
+
+map<QString, float> GradientDescent::statisticLabelToValue()
+{
+    return m_statisticLabelToValue;
 }

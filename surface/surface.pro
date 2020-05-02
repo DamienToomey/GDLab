@@ -13,6 +13,7 @@ SOURCES += src/main.cpp \
     src/gradientdescent/gradientdescentwithmomentum.cpp \
     src/gradientdescent/nesterovmomentum.cpp \
     src/gradientdescent/rmsprop.cpp \
+    src/resultwindow.cpp \
     src/surfacegraph.cpp \
     src/mainwindow.cpp \
     src/gradientdescent/vanillagradientdescent.cpp
@@ -25,6 +26,7 @@ HEADERS += include/surfacegraph.h \
     include/gradientdescent/rmsprop.h \
     include/mainwindow.h \
     include/gradientdescent/nesterovmomentum.h \
+    include/resultwindow.h \
     include/tinycolormap.hpp \
     include/gradientdescent/vanillagradientdescent.h
 

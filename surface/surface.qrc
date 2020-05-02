@@ -1,5 +1,9 @@
 <RCC>
-    <qresource prefix="/sphere">
-        <file alias="sphere">lib/sphere.obj</file>
+    <qresource prefix="/">
+        <file alias="sphere.obj">lib/sphere.obj</file>
+    </qresource>
+
+    <qresource prefix="/">
+        <file alias="mathjs_derivative.mjs">lib/mathjs_derivative.mjs</file>
     </qresource>
 </RCC>

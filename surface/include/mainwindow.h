@@ -24,6 +24,8 @@
 
 #include "surfacegraph.h"
 
+#include "resultwindow.h"
+
 #include "gradientdescent/vanillagradientdescent.h"
 #include "gradientdescent/gradientdescentwithmomentum.h"
 #include "gradientdescent/nesterovmomentum.h"
@@ -72,9 +74,10 @@ public Q_SLOTS:
     void setSelectedPoint(QPoint selectedPoint);
     void runGradientDescent();
     void toggleCurve(bool checked);
-    void toggleCurves();
+    void toggleCurves(bool);
     void resetValues();
-    void checkAllCheckboxes();
+    void toggleCheckboxes(bool);
+    void openResultWindow();
 
 private:
     QWidget *m_container;
@@ -100,7 +103,8 @@ private:
     QPushButton *m_runGradientDescentButton;
     QPushButton *m_toggleCurvesButton;
     QPushButton *m_resetValuesButton;
-    QPushButton *m_checkAllCheckboxesButton;
+    QPushButton *m_toggleCheckboxesButton;
+    QPushButton *m_resultButton;
     QLineEdit *m_costFunctionLineEdit;
     QLineEdit *m_dfdxLineEdit;
     QLineEdit *m_dfdzLineEdit;
@@ -123,7 +127,6 @@ private:
     QScrollArea* initializeScrollArea(QScrollArea *scrollArea);
     void initializeLeftVLayout(QVBoxLayout *leftVLayout);
     void initializeRightVLayout(QVBoxLayout *rightVLayout);
-    void setPredefinedValues(QDoubleSpinBox *spinBox, QString hyperParameter);
 };
 
 #endif // MAINWINDOW_H
