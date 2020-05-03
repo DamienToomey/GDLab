@@ -674,51 +674,15 @@ MainWindow::~MainWindow()
 
 void MainWindow::openResultWindow()
 {
-    QTableWidget *tableWidget = new QTableWidget();
-    tableWidget->setRowCount(m_gradientDescentMethodToGradientDescent.size()+1);
-    tableWidget->setColumnCount(5);
+    new ResultWindow(this, m_widget);
+}
 
-    int row = 1;
-    int column = 0;
+map<QString, QCheckBox*> MainWindow::gradientDescentMethodToCheckBox()
+{
+    return m_gradientDescentMethodToCheckBox;
+}
 
-    map<QString, float>::iterator ite;
-    map<QString, GradientDescent*>::iterator it;
-    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
-        QTableWidgetItem *newItem = new QTableWidgetItem(it->second->name());
-        tableWidget->setItem(row, column, newItem);
-        row++;
-    }
-
-    row = 0;
-    column = 1;
-    it = m_gradientDescentMethodToGradientDescent.begin();
-    map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
-    for (ite = statisticLabelToValue.begin(); ite != statisticLabelToValue.end(); ++ite) {
-        QTableWidgetItem *newItem = new QTableWidgetItem(ite->first);
-        tableWidget->setItem(row, column, newItem);
-        column++;
-    }
-
-    row = 1;
-    column = 1;
-
-    for (it = m_gradientDescentMethodToGradientDescent.begin(); it != m_gradientDescentMethodToGradientDescent.end(); ++it) {
-        column = 1;
-        map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
-        for (ite = statisticLabelToValue.begin(); ite != statisticLabelToValue.end(); ++ite) {
-            QTableWidgetItem *newItem = new QTableWidgetItem(QString("%1").arg(ite->second));
-            tableWidget->setItem(row, column, newItem);
-            column++;
-        }
-        row++;
-    }
-
-    tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers); // table in read mode only
-    tableWidget->resizeColumnsToContents(); //setResizeMode(QHeaderView::Stretch);
-
-    ResultWindow *fenetreCode = new ResultWindow(tableWidget, m_widget);
-    fenetreCode->setModal(false);
-    fenetreCode->setWindowFlags(Qt::Window); // adds reduce and resize buttons to title bar
-    fenetreCode->resize(tableWidget->columnCount()*110, tableWidget->rowCount()*35);
-    fenetreCode->show();
+map<QString, GradientDescent*> MainWindow::gradientDescentMethodToGradientDescent()
+{
+    return m_gradientDescentMethodToGradientDescent;
 }

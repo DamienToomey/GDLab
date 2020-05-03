@@ -32,7 +32,10 @@ vector<QVector3D> RMSProp::run()
     float dxSquared = 0;
     float dzSquared = 0;
 
-    time_t start = time(0);
+    high_resolution_clock::time_point start = high_resolution_clock::now();
+    // unsync the I/O of C and C++.
+    ios_base::sync_with_stdio(false);
+
     while ((sqrt(pow(m_dfdx, 2) + pow(m_dfdz, 2)) > tol) && (k <= nIterMax)) {
         m_cost = evaluateF(m_xHat, m_zHat);
         m_dfdx = evaluateDfdx(m_xHat, m_zHat);
@@ -45,12 +48,14 @@ vector<QVector3D> RMSProp::run()
 
         k += 1;
     }
-    time_t end = time(0);
 
-    m_statisticLabelToValue["Execution time"] = end - start;
-    m_statisticLabelToValue["Last cost value"] = m_points.end()->y();
-    m_statisticLabelToValue["Number of iterations"] = k;
-    m_statisticLabelToValue["Reached nIterMax"] = (k >= nIterMax) ? 1 : 0;
+    high_resolution_clock::time_point end = high_resolution_clock::now();
+    float time_taken = convertTime(start, end);
+
+    m_statisticLabelToValue["Execution time (in seconds)"] = time_taken;
+    m_statisticLabelToValue["Last cost value"] = m_points.back().y();
+    m_statisticLabelToValue["nIter"] = k - 1;
+    m_statisticLabelToValue["nIterMax"] = nIterMax;
 
     return m_points;
 }

@@ -7,10 +7,10 @@ GradientDescent::GradientDescent()
     setId(static_id);
     static_id++;
 
-    m_statisticLabelToValue["Execution time"] = 0;
+    m_statisticLabelToValue["Execution time (in seconds)"] = 0;
     m_statisticLabelToValue["Last cost value"] = 0;
-    m_statisticLabelToValue["Number of iterations"] = 0;
-    m_statisticLabelToValue["Reached nIterMax"] = 0;
+    m_statisticLabelToValue["nIter"] = 0;
+    m_statisticLabelToValue["nIterMax"] = 0;
 }
 
 void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializationPoint)
@@ -108,4 +108,13 @@ vector<QString> GradientDescent::hyperParameters()
 map<QString, float> GradientDescent::statisticLabelToValue()
 {
     return m_statisticLabelToValue;
+}
+
+float GradientDescent::convertTime(high_resolution_clock::time_point start,
+                                   high_resolution_clock::time_point end)
+{
+    // Calculating total time taken by the program.
+    double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    time_taken *= 1e-9;
+    return time_taken;
 }

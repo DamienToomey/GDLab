@@ -3,6 +3,9 @@
 
 #include "surfacegraph.h"
 
+#include <chrono>
+using namespace chrono;
+
 #include <cmath>
 #include <vector>
 
@@ -37,6 +40,7 @@ protected:
     map<QString, float> m_hyperParameterToValue;
     map<QString, float> m_hyperParameterToDefaultValue;
     map<QString, float> m_statisticLabelToValue;
+    float convertTime(high_resolution_clock::time_point start, high_resolution_clock::time_point end);
 
 private:
     static int static_id;

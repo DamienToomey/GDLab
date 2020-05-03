@@ -13,6 +13,7 @@ SOURCES += src/main.cpp \
     src/gradientdescent/gradientdescentwithmomentum.cpp \
     src/gradientdescent/nesterovmomentum.cpp \
     src/gradientdescent/rmsprop.cpp \
+    src/mytablewidgetitem.cpp \
     src/resultwindow.cpp \
     src/surfacegraph.cpp \
     src/mainwindow.cpp \
@@ -26,6 +27,7 @@ HEADERS += include/surfacegraph.h \
     include/gradientdescent/rmsprop.h \
     include/mainwindow.h \
     include/gradientdescent/nesterovmomentum.h \
+    include/mytablewidgetitem.h \
     include/resultwindow.h \
     include/tinycolormap.hpp \
     include/gradientdescent/vanillagradientdescent.h

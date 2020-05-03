@@ -64,6 +64,8 @@ public:
     SurfaceGraph* modifier();
     vector<GradientDescent*> visibleCurvesMemory();
     map<int, QLinearGradient> intToLinearGradient();
+    map<QString, QCheckBox*> gradientDescentMethodToCheckBox();
+    map<QString, GradientDescent*> gradientDescentMethodToGradientDescent();
 
 public Q_SLOTS:
     void resetCamera();
