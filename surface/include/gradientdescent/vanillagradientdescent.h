@@ -12,7 +12,7 @@ public:
     virtual QString name();
 
 private:
-    float updateRule(float xHat, float dfdx, float lr);
+    float updateRule(float xHat, float dx, float lr);
 };
 
 #endif // VANILLAGRADIENTDESCENT_H

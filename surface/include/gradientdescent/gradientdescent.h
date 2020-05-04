@@ -17,23 +17,32 @@ public:
     virtual vector<QVector3D> run() = 0;
     virtual QColor color() = 0;
     virtual QString name() = 0;
+    virtual bool hessianIsNecessary();
     void setHyperParameterValue(QString hyperParameter, float value);
     float hyperParameterValue(QString hyperParameter);
     void initialize(SurfaceGraph *modifier, QVector3D selectedPoint);
     float evaluateF(float xHat, float zHat);
-    float evaluateDfdx(float xHat, float zHat);
-    float evaluateDfdz(float xHat, float zHat);
+    float evaluateDx(float xHat, float zHat);
+    float evaluateDz(float xHat, float zHat);
     int id();    
     vector<QVector3D> points();
     float hyperParameterDefaultValue(QString hyperParameter);
     vector<QString> hyperParameters();
     map<QString, float> statisticLabelToValue();
+    float evaluateDxdx(float xHat, float zHat);
+    float evaluateDxdz(float xHat, float zHat);
+    float evaluateDzdx(float xHat, float zHat);
+    float evaluateDzdz(float xHat, float zHat);
 
 protected:
     float m_xHat;
     float m_zHat;
-    float m_dfdx;
-    float m_dfdz;
+    float m_dx;
+    float m_dz;
+    float m_dxdx;
+    float m_dxdz;
+    float m_dzdx;
+    float m_dzdz;
     float m_cost;
     int m_id;
     vector<QVector3D> m_points;

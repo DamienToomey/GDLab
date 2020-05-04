@@ -49,7 +49,6 @@ SurfaceGraph::SurfaceGraph(MainWindow *mainWindow)
     m_yRotation = m_originalYRotation;
     m_zoomLevel = m_originalZoomLevel;
 
-//    m_evaluateFunction = initializeJSEngine(":/mathjs_evaluate.mjs", "evaluate");
     m_derivativeFunction = initializeJSEngine(":/mathjs_derivative.mjs", "derivative");
 
     customizeAxes();
@@ -153,7 +152,7 @@ QString SurfaceGraph::preprocessArithmeticExpression(QString arithmeticExpressio
     }
 
     arithmeticExpression.replace(QRegExp("([a-z]+[0-9]*\\()"), "Math.\\1");
-    arithmeticExpression.replace("(-", "(-1*"); // exp(-x**2) does not work so I replace it with exp(-1*x**2)
+    arithmeticExpression.replace("-", "-1*"); // exp(-x**2) and -x**2 do not work so I replace it with exp(-1*x**2)
     return arithmeticExpression;
 }
 
@@ -167,7 +166,7 @@ QString SurfaceGraph::javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeti
     return arithmeticExpression.replace("**", "^");
 }
 
-QString SurfaceGraph::computePartialDerivative(QString function, QString variable)
+void SurfaceGraph::computePartialDerivative(QString function, QString derivative, QString variable)
 {
    QJSValueList args;
    args << m_functionToArithmeticExpression[function].toStdString().c_str() << variable;
@@ -179,8 +178,16 @@ QString SurfaceGraph::computePartialDerivative(QString function, QString variabl
                 << result.property("lineNumber").toInt()
                 << ":" << result.toString();
    }
-   QString dfdx = result.toString();
-   return dfdx;
+   QString dx = result.toString();
+
+   m_functionToArithmeticExpression[derivative] = dx; // mathjs format (^ for pow, sin for Math.sin)
+
+   dx = mathjsPowerSymbolToJavascriptPowerSymbol(dx);
+   setLineEditText(m_mainWindow->functionToLineEdit(derivative), dx);
+   m_functionToEvaluateFunction[derivative] = m_JSEngine.evaluate(
+               QString("(function(x, z) { return %1 ; })").arg(
+                       preprocessArithmeticExpression(dx)
+               ));
 }
 
 void SurfaceGraph::setLineEditText(QLineEdit *lineEdit, QString text)
@@ -189,28 +196,29 @@ void SurfaceGraph::setLineEditText(QLineEdit *lineEdit, QString text)
     lineEdit->setCursorPosition(0);
 }
 
-void SurfaceGraph::computePartialDerivatives()
+void SurfaceGraph::computeGradient()
 {
     if (m_costFunctionIsValid) {
-        QString dfdx = computePartialDerivative("f", "x");
-        dfdx = mathjsPowerSymbolToJavascriptPowerSymbol(dfdx);
-        setLineEditText(m_mainWindow->dfdxLineEdit(), dfdx);
-        m_functionToEvaluateFunction["dfdx"] = m_JSEngine.evaluate(
-                    QString("(function(x, z) { return %1 ; })").arg(
-                            preprocessArithmeticExpression(dfdx)
-                    ));
-        m_functionToArithmeticExpression["dfdx"] = dfdx;
+        computePartialDerivative("f", "dx", "x");
+        computePartialDerivative("f", "dz", "z");
+        setGradientIsComputed(true);
+    }
+    else {
+        QMessageBox::critical(m_mainWindow, tr("Error"), tr("The cost function is not valid. Gradient cannot be computed"));
+    }
+}
 
-        QString dfdz = computePartialDerivative("f", "z");
-        dfdz = mathjsPowerSymbolToJavascriptPowerSymbol(dfdz);
-        setLineEditText(m_mainWindow->dfdzLineEdit(), dfdz);
-        m_functionToEvaluateFunction["dfdz"] = m_JSEngine.evaluate(
-                    QString("(function(x, z) { return %1 ; })").arg(
-                            preprocessArithmeticExpression(dfdz)
-                    ));
-        m_functionToArithmeticExpression["dfdz"] = dfdz;
-
-        setPartialDerivarivesAreComputed(true);
+void SurfaceGraph::computeHessian()
+{
+    if (gradientIsComputed()) {
+        computePartialDerivative("dx", "dxdx", "x");
+        computePartialDerivative("dx", "dxdz", "z");
+        computePartialDerivative("dz", "dzdx", "x");
+        computePartialDerivative("dz", "dzdz", "z");
+        setHessianIsComputed(true);
+    }
+    else {
+        QMessageBox::critical(m_mainWindow, tr("Error"), tr("Gradient needs to be computed in order to compute hessian matrix"));
     }
 }
 
@@ -221,26 +229,19 @@ float SurfaceGraph::evaluateFunction(QString function, float x, float z)
     float y = m_functionToEvaluateFunction[function].call(args).toNumber();
     return y;
 }
-//float SurfaceGraph::evaluateFunction(QString function, double x, double z)
-//{
-//   QJSValueList args;
-//   args << m_functionToArithmeticExpression[function] << x << z;
-//   QJSValue result = m_evaluateFunction.call(args);
-
-//   if (result.isError()) {
-//       qDebug() << "Uncaught exception in evaluateFunction"
-//                << result.property("fileName").toString()
-//                << result.property("lineNumber").toInt()
-//                << ":" << result.toString();
-//   }
-//   return result.toNumber();
-//}
 
 void SurfaceGraph::drawModel(QString arithmeticExpression)
 {
     m_graph->removeCustomItems();
     m_costFunctionIsValid = true;
-    setPartialDerivarivesAreComputed(false);
+    setGradientIsComputed(false);
+    setHessianIsComputed(false);
+    setLineEditText(m_mainWindow->functionToLineEdit("dx"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dz"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dxdx"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dxdz"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dzdx"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dzdz"), "");
 
     m_functionToEvaluateFunction["f"] = m_JSEngine.evaluate(
                 QString("(function(x, z) { return %1 ; })").arg(
@@ -256,6 +257,15 @@ void SurfaceGraph::drawModel(QString arithmeticExpression)
         m_graph->axisY()->setAutoAdjustRange(true);
         fillProxy("f");
         m_graph->addSeries(m_series);
+        m_graph->axisY()->setMin(m_graph->axisY()->min() - 0.1);
+        m_graph->axisY()->setMax(m_graph->axisY()->max() + 0.1);
+        // - 0.1 and + 0.1 because
+        // "Note: Items positioned outside any axis range are not rendered if positionAbsolute
+        // is false, unless the item is a QCustom3DVolume that would be partially visible and
+        // scalingAbsolute is also false. In that case, the visible portion of the volume will
+        // be rendered.
+        // https://doc.qt.io/qt-5/qcustom3ditem.html
+        m_mainWindow->ySpinBox()->setRange(m_graph->axisY()->min() , m_graph->axisY()->max());
         resetRange();
     }
 }
@@ -522,7 +532,7 @@ void SurfaceGraph::setCostFunction(int function)
             break;
         }
         case MainWindow::SqrtSin: {
-            QString R = "(sqrt( z** 2 + x ** 2) + 0.01)";
+            QString R = "(sqrt( z ** 2 + x ** 2) + 0.01)";
             arithmeticExpression = QString("(sin(%1) / %1 + 0.24) * 1.61").arg(R);
             break;
         }
@@ -536,15 +546,19 @@ void SurfaceGraph::setCostFunction(int function)
             break;
         }
         case MainWindow::WideSaddle: {
-            arithmeticExpression = "x**4 - z**4";
+            arithmeticExpression = "x ** 4 - z ** 4";
             break;
         }
         default:
             break;
     }
-    setLineEditText(m_mainWindow->costFunctionLineEdit(), arithmeticExpression);
-    setLineEditText(m_mainWindow->dfdxLineEdit(), "");
-    setLineEditText(m_mainWindow->dfdzLineEdit(), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("f"), arithmeticExpression);
+    setLineEditText(m_mainWindow->functionToLineEdit("dx"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dz"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dxdx"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dxdz"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dzdx"), "");
+    setLineEditText(m_mainWindow->functionToLineEdit("dzdz"), "");
     drawModel(arithmeticExpression);
 }
 
@@ -606,17 +620,26 @@ Q3DSurface* SurfaceGraph::graph()
     return m_graph;
 }
 
-void SurfaceGraph::setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed)
+void SurfaceGraph::setGradientIsComputed(bool gradientIsComputed)
 {
-    m_partialDerivarivesAreComputed = partialDerivarivesAreComputed;
+    m_gradientIsComputed = gradientIsComputed;
 }
 
-bool SurfaceGraph::partialDerivarivesAreComputed()
+bool SurfaceGraph::gradientIsComputed()
 {
-    return m_partialDerivarivesAreComputed;
+    return m_gradientIsComputed;
+}
+
+void SurfaceGraph::setHessianIsComputed(bool hessianIsComputed)
+{
+    m_hessianIsComputed = hessianIsComputed;
+}
+
+bool SurfaceGraph::hessianIsComputed()
+{
+    return m_hessianIsComputed;
 }
 
 QSurfaceDataProxy* SurfaceGraph::proxy() {
     return m_proxy;
 }
-

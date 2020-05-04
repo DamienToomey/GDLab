@@ -12,7 +12,7 @@ public:
     virtual QString name();
 
 private:
-    float updateRule(float xHat, float dfdx, float lr, float rho, float& vx);
+    float updateRule(float xHat, float dx, float lr, float rho, float& vx);
 };
 
 #endif // GRADIENTDESCENTWITHMOMENTUM_H

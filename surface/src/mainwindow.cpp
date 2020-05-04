@@ -12,6 +12,7 @@ MainWindow::MainWindow(Q3DSurface *graph, QWidget *container)
     m_gradientDescentMethodToGradientDescent["AdaGrad"] = new AdaGrad();
     m_gradientDescentMethodToGradientDescent["RMSProp"] = new RMSProp();
     m_gradientDescentMethodToGradientDescent["Adam"] = new Adam();
+    m_gradientDescentMethodToGradientDescent["NewtonRegularized"] = new NewtonRegularized();
 
     int i = 0;
     map<QString, GradientDescent*>::iterator it;
@@ -65,21 +66,6 @@ void MainWindow::updateYRotationSlider(float rotation)
 void MainWindow::updateZoomLevelSlider(float zoomLevel)
 {
     m_zoomSlider->setValue(zoomLevel);
-}
-
-QLineEdit* MainWindow::dfdxLineEdit()
-{
-    return m_dfdxLineEdit;
-}
-
-QLineEdit* MainWindow::dfdzLineEdit()
-{
-    return m_dfdzLineEdit;
-}
-
-QLineEdit* MainWindow::costFunctionLineEdit()
-{
-    return m_costFunctionLineEdit;
 }
 
 bool MainWindow::pointIsOnSurface(QPoint selectedPoint)
@@ -138,19 +124,27 @@ void MainWindow::runGradientDescent()
         setPointIsSelected(false);
     }
 
-    if (m_modifier->partialDerivarivesAreComputed()) {
-        map<QString, QCheckBox*>::iterator it;
-        for (it = m_gradientDescentMethodToCheckBox.begin(); it != m_gradientDescentMethodToCheckBox.end(); ++it) {
-            if (it->second->isChecked()) {
-                GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[it->first];
-                gradientDescent->initialize(m_modifier, selectedPoint());
-                gradientDescent->run();
-                plotPoints(gradientDescent);
-            }
+    if (!m_modifier->gradientIsComputed()) {
+        QMessageBox::critical(this, tr("Error"), tr("Gradient needs to be computed in order to run gradient descent"));
+        return;
+    }
+
+    map<QString, GradientDescent*>::iterator iter;
+    for (iter = m_gradientDescentMethodToGradientDescent.begin(); iter != m_gradientDescentMethodToGradientDescent.end(); ++iter) {
+        if (iter->second->hessianIsNecessary() && !m_modifier->hessianIsComputed() && m_gradientDescentMethodToCheckBox[iter->first]->isChecked()) {
+            QMessageBox::critical(this, tr("Error"), QString(tr("%1 requires hessian to be computed")).arg(iter->second->name()));
+            return;
         }
     }
-    else {
-        QMessageBox::critical(this, tr("Error"), tr("Don't forget to compute partial derivative before running gradient descent"));
+
+    map<QString, QCheckBox*>::iterator ite;
+    for (ite = m_gradientDescentMethodToCheckBox.begin(); ite != m_gradientDescentMethodToCheckBox.end(); ++ite) {
+        if (ite->second->isChecked()) {
+            GradientDescent *gradientDescent = m_gradientDescentMethodToGradientDescent[ite->first];
+            gradientDescent->initialize(m_modifier, selectedPoint());
+            gradientDescent->run();
+            plotPoints(gradientDescent);
+        }
     }
 }
 
@@ -184,11 +178,12 @@ void MainWindow::plotPoints(GradientDescent *gradientDescentMethod)
     vector<QVector3D> points = gradientDescentMethod->points();
     QImage image = QImage(2, 2, QImage::Format_RGB32);
     image.fill(gradientDescentMethod->color());
-    for (vector<QVector3D>::iterator it=points.begin(); it!=points.end(); ++it) {
+    for (vector<QVector3D>::iterator it = points.begin(); it != points.end(); ++it) {
         QCustom3DItem *item = new QCustom3DItem(":/sphere.obj", *it,
                                                 QVector3D(0.02f, 0.02f, 0.02f),
                                                 QQuaternion::fromAxisAndAngle(0.0f, 0.0f, 0.0f, 0.0f),
                                                 image);
+
         item->setProperty("id", gradientDescentMethod->id());
         m_graph->addCustomItem(item);
     }
@@ -250,8 +245,11 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     QGroupBox *mathsGroupBox = new QGroupBox(tr("Maths"));
     QVBoxLayout *mathsVBox = new QVBoxLayout();
 
+    QGroupBox *costFunctionGroupBox = new QGroupBox(tr("Cost function"));
+    QVBoxLayout *costFunctionVBox = new QVBoxLayout();
+
     QLabel *costFunctionLabel = new QLabel("y = f(x, z)", m_widget);
-    mathsVBox->addWidget(costFunctionLabel);
+    costFunctionVBox->addWidget(costFunctionLabel);
 
     m_costFunctionList = new QComboBox();
     m_costFunctionList->addItem(tr("Inclined Taco Shell"));
@@ -259,36 +257,78 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     m_costFunctionList->addItem(tr("Narrow Saddle"));
     m_costFunctionList->addItem(tr("NonConvex"));
     m_costFunctionList->addItem(tr("Wide Saddle"));
-    mathsVBox->addWidget(m_costFunctionList);
+    costFunctionVBox->addWidget(m_costFunctionList);
 
-    m_costFunctionLineEdit = new QLineEdit(m_widget);
-    mathsVBox->addWidget(m_costFunctionLineEdit);
+    m_functionToLineEdit["f"] = new QLineEdit(m_widget);
+    costFunctionVBox->addWidget(m_functionToLineEdit["f"]);
 
-    m_computePartialDerivativesButton = new QPushButton(m_widget);
-    m_computePartialDerivativesButton->setText(tr("Compute partial derivatives"));
-    mathsVBox->addWidget(m_computePartialDerivativesButton);
+    costFunctionGroupBox->setLayout(costFunctionVBox);
+    mathsVBox->addWidget(costFunctionGroupBox);
 
+    QGroupBox *gradientGroupBox = new QGroupBox(tr("Gradient"));
+    QVBoxLayout *gradientVBox = new QVBoxLayout();
     QLabel *dfdxLabel = new QLabel("df/dx", m_widget);
-    mathsVBox->addWidget(dfdxLabel);
+    gradientVBox->addWidget(dfdxLabel);
 
-    m_dfdxLineEdit = new QLineEdit(m_widget);
-    m_dfdxLineEdit->setReadOnly(true);
-    mathsVBox->addWidget(m_dfdxLineEdit);
+    m_functionToLineEdit["dx"] = new QLineEdit(m_widget);
+    m_functionToLineEdit["dx"]->setReadOnly(true);
+    gradientVBox->addWidget(m_functionToLineEdit["dx"]);
 
     QLabel *dfdzLabel = new QLabel("df/dz", m_widget);
-    mathsVBox->addWidget(dfdzLabel);
+    gradientVBox->addWidget(dfdzLabel);
 
-    m_dfdzLineEdit = new QLineEdit(m_widget);
-    m_dfdzLineEdit->setReadOnly(true);
-    mathsVBox->addWidget(m_dfdzLineEdit);
+    m_functionToLineEdit["dz"] = new QLineEdit(m_widget);
+    m_functionToLineEdit["dz"]->setReadOnly(true);
+    gradientVBox->addWidget(m_functionToLineEdit["dz"]);
 
-    m_runGradientDescentButton = new QPushButton(m_widget);
-    m_runGradientDescentButton->setText(tr("Run Gradient Descent"));
-    mathsVBox->addWidget(m_runGradientDescentButton);
+    m_computeGradientButton = new QPushButton(m_widget);
+    m_computeGradientButton->setText(tr("Compute gradient"));
+    gradientVBox->addWidget(m_computeGradientButton);
+
+    gradientGroupBox->setLayout(gradientVBox);
+    mathsVBox->addWidget(gradientGroupBox);
+
+    // -----
+    QGroupBox *hessianGroupBox = new QGroupBox(tr("Hessian"));
+    QVBoxLayout *hessianVBox = new QVBoxLayout();
+    QFormLayout *hessianForm = new QFormLayout();
+
+    m_functionToLineEdit["dxdx"] = new QLineEdit(m_widget);
+    m_functionToLineEdit["dxdx"]->setReadOnly(true);
+    m_functionToLineEdit["dxdx"]->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    m_functionToLineEdit["dxdx"]->setMaximumWidth(100);
+    m_functionToLineEdit["dxdz"] = new QLineEdit(m_widget);
+    m_functionToLineEdit["dxdz"]->setReadOnly(true);
+    m_functionToLineEdit["dxdz"]->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    m_functionToLineEdit["dxdz"]->setMaximumWidth(100);
+    hessianForm->addRow(new QLabel("d²f/dx²", m_widget), new QLabel("d²f/dxdz", m_widget));
+    hessianForm->addRow(m_functionToLineEdit["dxdx"], m_functionToLineEdit["dxdz"]);
+
+    m_functionToLineEdit["dzdx"] = new QLineEdit(m_widget);
+    m_functionToLineEdit["dzdx"]->setReadOnly(true);
+    m_functionToLineEdit["dzdx"]->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    m_functionToLineEdit["dzdx"]->setMaximumWidth(100);
+    m_functionToLineEdit["dzdz"] = new QLineEdit(m_widget);
+    m_functionToLineEdit["dzdz"]->setReadOnly(true);
+    m_functionToLineEdit["dzdz"]->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    m_functionToLineEdit["dzdz"]->setMaximumWidth(100);
+
+    hessianForm->addRow(new QLabel("d²f/dzdx", m_widget), new QLabel("d²f/dz²", m_widget));
+    hessianForm->addRow(m_functionToLineEdit["dzdx"], m_functionToLineEdit["dzdz"]);
+    hessianVBox->addLayout(hessianForm);
+
+    m_computeHessianButton = new QPushButton(m_widget);
+    m_computeHessianButton->setText(tr("Compute hessian"));
+    hessianVBox->addWidget(m_computeHessianButton);
+
+    hessianGroupBox->setLayout(hessianVBox);
+    mathsVBox->addWidget(hessianGroupBox);
+    // -----
 
     m_xSpinBox = new QDoubleSpinBox(m_widget);
     m_xSpinBox->setLocale(QLocale::English);
     m_xSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    m_xSpinBox->setRange(-8.0f, 8.0f);
     m_xSpinBox->setReadOnly(true);
 
     m_ySpinBox = new QDoubleSpinBox(m_widget);
@@ -299,6 +339,7 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     m_zSpinBox = new QDoubleSpinBox(m_widget);
     m_zSpinBox->setLocale(QLocale::English);
     m_zSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    m_zSpinBox->setRange(-8.0f, 8.0f);
     m_zSpinBox->setReadOnly(true);
 
     QGridLayout *spinBoxGrid = new QGridLayout(m_widget);
@@ -309,6 +350,10 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     spinBoxGrid->addWidget(m_zSpinBox, 0, 4);
     spinBoxGrid->addWidget(new QLabel("z", m_widget), 0, 5);
     mathsVBox->addLayout(spinBoxGrid);
+
+    m_runGradientDescentButton = new QPushButton(m_widget);
+    m_runGradientDescentButton->setText(tr("Run Gradient Descent"));
+    mathsVBox->addWidget(m_runGradientDescentButton);
 
     mathsGroupBox->setLayout(mathsVBox);
     scrollLayout->addWidget(mathsGroupBox);
@@ -463,7 +508,7 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     scrollArea->setWidget(scrollWidget);
     rightVLayout->addWidget(scrollArea);
 
-    QObject::connect(m_costFunctionLineEdit, &QLineEdit::textEdited,
+    QObject::connect(m_functionToLineEdit["f"], &QLineEdit::textEdited,
                      m_modifier, &SurfaceGraph::drawModel);
     QObject::connect(m_axisMinSliderX, &QSlider::valueChanged,
                      m_modifier, &SurfaceGraph::adjustXMin);
@@ -482,8 +527,10 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
                      SLOT(resetCamera()));
     QObject::connect(m_cameraPOVButton, &QPushButton::pressed, m_modifier,
                      &SurfaceGraph::setCameraPreset);
-    QObject::connect(m_computePartialDerivativesButton, &QPushButton::pressed,
-                     m_modifier, &SurfaceGraph::computePartialDerivatives);
+    QObject::connect(m_computeGradientButton, &QPushButton::pressed,
+                     m_modifier, &SurfaceGraph::computeGradient);
+    QObject::connect(m_computeHessianButton, &QPushButton::pressed,
+                     m_modifier, &SurfaceGraph::computeHessian);
     QObject::connect(m_costFunctionList, SIGNAL(currentIndexChanged(int)),
                      m_modifier, SLOT(setCostFunction(int)));
     QObject::connect(m_viewList, SIGNAL(currentIndexChanged(int)),
@@ -568,7 +615,12 @@ void MainWindow::initializeLeftVLayout(QVBoxLayout *leftVLayout)
         // -----
         QFormLayout *formLayout = new QFormLayout();
         QCheckBox *runGDAlgortihmsCheckbox = new QCheckBox();
-        runGDAlgortihmsCheckbox->setChecked(true);
+        if (!it->second->hessianIsNecessary()) {
+            runGDAlgortihmsCheckbox->setChecked(true);
+        }
+        else {
+            runGDAlgortihmsCheckbox->setChecked(false);
+        }
         m_gradientDescentMethodToCheckBox[it->first] = runGDAlgortihmsCheckbox;
 
         pmp.setBrush(QBrush(it->second->color()));
@@ -685,4 +737,19 @@ map<QString, QCheckBox*> MainWindow::gradientDescentMethodToCheckBox()
 map<QString, GradientDescent*> MainWindow::gradientDescentMethodToGradientDescent()
 {
     return m_gradientDescentMethodToGradientDescent;
+}
+
+map<QString, QLineEdit*> MainWindow::functionToLineEdit()
+{
+    return m_functionToLineEdit;
+}
+
+QLineEdit* MainWindow::functionToLineEdit(QString function)
+{
+    return m_functionToLineEdit[function];
+}
+
+QDoubleSpinBox* MainWindow::ySpinBox()
+{
+    return m_ySpinBox;
 }

@@ -12,6 +12,7 @@ SOURCES += src/main.cpp \
     src/gradientdescent/gradientdescent.cpp \
     src/gradientdescent/gradientdescentwithmomentum.cpp \
     src/gradientdescent/nesterovmomentum.cpp \
+    src/gradientdescent/newtonregularized.cpp \
     src/gradientdescent/rmsprop.cpp \
     src/mytablewidgetitem.cpp \
     src/resultwindow.cpp \
@@ -24,6 +25,7 @@ HEADERS += include/surfacegraph.h \
     include/gradientdescent/adam.h \
     include/gradientdescent/gradientdescent.h \
     include/gradientdescent/gradientdescentwithmomentum.h \
+    include/gradientdescent/newtonregularized.h \
     include/gradientdescent/rmsprop.h \
     include/mainwindow.h \
     include/gradientdescent/nesterovmomentum.h \

@@ -51,11 +51,13 @@ void ResultWindow::initializeTable()
     map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
     m_tableWidget->setColumnCount(statisticLabelToValue.size()+1); // number of statistics
 
+
     MyTableWidgetItem *newItem = new MyTableWidgetItem(QString(""));
     m_tableWidget->setItem(0, 0, newItem);
 
     map<QString, float>::iterator ite;
     int row = 1;
+    int costValueColumn;
     for (it = gradientDescentMethodToGradientDescent.begin(); it != gradientDescentMethodToGradientDescent.end(); ++it) {
         int column = 1;
         if (gradientDescentMethodToCheckBox[it->first]->isChecked()) {
@@ -64,17 +66,20 @@ void ResultWindow::initializeTable()
 
             map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
             for (ite = statisticLabelToValue.begin(); ite != statisticLabelToValue.end(); ++ite) {
+                if (ite->first.contains("cost")) {
+                    costValueColumn = column;
+                }
                 newItem = new MyTableWidgetItem(ite->first);
                 newItem->setTextAlignment(Qt::AlignHCenter);
                 m_tableWidget->setItem(0, column, newItem); // NOT EFFICIENT but for code readibility
                 newItem = new MyTableWidgetItem(QString("%1").arg(ite->second));
+                newItem->setTextAlignment(Qt::AlignHCenter);
                 m_tableWidget->setItem(row, column, newItem);
                 column++;
             }
             row++;
         }
     }
-    const int costValueColumn = 2;
     m_tableWidget->sortItems(costValueColumn,  Qt::AscendingOrder);
 }
 

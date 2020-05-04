@@ -79,8 +79,10 @@ public:
     void setAxisXRange(float min, float max);
     void setAxisZRange(float min, float max);
     void fillProxy(QString function);
-    void computePartialDerivatives();
-    void setPartialDerivarivesAreComputed(bool partialDerivarivesAreComputed);
+    void computeGradient();
+    void computeHessian();
+    void setGradientIsComputed(bool gradientIsComputed);
+    void setHessianIsComputed(bool hessianIsComputed);
     float originalXRotation();
     float originalYRotation();
     float originalZoomLevel();
@@ -88,10 +90,10 @@ public:
     float yRotation();
     float zoomLevel();
     int cameraPreset();
-    bool partialDerivarivesAreComputed();
+    bool gradientIsComputed();
+    bool hessianIsComputed();
     QJSValue initializeJSEngine(QString module, QString property);
     float evaluateFunction(QString function, float x, float z);
-
 
 public Q_SLOTS:
     Q3DSurface* graph();
@@ -125,13 +127,14 @@ private:
     float m_originalZoomLevel;
     int m_cameraPreset;
     bool m_costFunctionIsValid;
-    bool m_partialDerivarivesAreComputed;
+    bool m_gradientIsComputed;
+    bool m_hessianIsComputed;
     MainWindow *m_mainWindow;
 
     QString preprocessArithmeticExpression(QString arithmeticExpression);
     QString mathjsPowerSymbolToJavascriptPowerSymbol(QString arithmeticExpression);
     QString javascriptPowerSymbolToMathjsPowerSymbol(QString arithmeticExpression);
-    QString computePartialDerivative(QString function, QString variable);
+    void computePartialDerivative(QString function, QString derivative, QString variable);
     QString cleanArithmeticExpression(QString arithmeticExpression);
     void setLineEditText(QLineEdit *lineEdit, QString text);
     void customizeAxes();

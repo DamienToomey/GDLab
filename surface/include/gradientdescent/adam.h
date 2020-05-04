@@ -12,7 +12,7 @@ public:
     virtual QString name();
 
 private:
-    float updateRule(float xHat, float dfdx, float lr, float beta1, float beta2,
+    float updateRule(float xHat, float dx, float lr, float beta1, float beta2,
                      float& firstMoment, float& secondMoment, int k);
 
 };

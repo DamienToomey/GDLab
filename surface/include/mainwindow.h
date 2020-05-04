@@ -32,6 +32,7 @@
 #include "gradientdescent/adagrad.h"
 #include "gradientdescent/rmsprop.h"
 #include "gradientdescent/adam.h"
+#include "gradientdescent/newtonregularized.h"
 
 #define TINYCOLORMAP_WITH_QT5
 #include "tinycolormap.hpp"
@@ -66,6 +67,9 @@ public:
     map<int, QLinearGradient> intToLinearGradient();
     map<QString, QCheckBox*> gradientDescentMethodToCheckBox();
     map<QString, GradientDescent*> gradientDescentMethodToGradientDescent();
+    map<QString, QLineEdit*> functionToLineEdit();
+    QLineEdit* functionToLineEdit(QString function);
+    QDoubleSpinBox* ySpinBox();
 
 public Q_SLOTS:
     void resetCamera();
@@ -101,15 +105,13 @@ private:
     QComboBox *m_gradientDescentCurveList;
     QPushButton *m_resetCameraButton;
     QPushButton *m_cameraPOVButton;
-    QPushButton *m_computePartialDerivativesButton;
+    QPushButton *m_computeGradientButton;
+    QPushButton *m_computeHessianButton;
     QPushButton *m_runGradientDescentButton;
     QPushButton *m_toggleCurvesButton;
     QPushButton *m_resetValuesButton;
     QPushButton *m_toggleCheckboxesButton;
     QPushButton *m_resultButton;
-    QLineEdit *m_costFunctionLineEdit;
-    QLineEdit *m_dfdxLineEdit;
-    QLineEdit *m_dfdzLineEdit;
     QDoubleSpinBox *m_xSpinBox;
     QDoubleSpinBox *m_ySpinBox;
     QDoubleSpinBox *m_zSpinBox;
@@ -125,6 +127,7 @@ private:
     map<QString, int> m_gradientDescentMethodToInt;
     map<int, QString> m_intToGradientDescentMethod;
     map<int, QLinearGradient> m_intToLinearGradient;
+    map<QString, QLineEdit*> m_functionToLineEdit;
 
     QScrollArea* initializeScrollArea(QScrollArea *scrollArea);
     void initializeLeftVLayout(QVBoxLayout *leftVLayout);
