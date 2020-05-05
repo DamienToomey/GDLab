@@ -12,6 +12,8 @@ GDLab is a gradient descent visualization tool for c++.
 
 Gradient descent is the backbone of Machine Learning/Deep Learning. GDLab is a tool to get a feeling on how these optimization methods behave by easily trying different hyperparameters on different cost functions.
 
+See demo on [here](https://youtu.be/EJN3oerqQVo).
+
 This app is based on [Surface Example](https://doc.qt.io/qt-5/qtdatavisualization-surface-example.html) by Qt.
 
 Qt is a cross-platform library (Linux, Windows, Mac, ...).
