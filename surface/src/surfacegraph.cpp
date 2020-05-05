@@ -118,7 +118,6 @@ void SurfaceGraph::fillProxy(QString function)
         for (int j = 0; j < sampleCountX; j++) {
             float x = qMin(sampleMax, (j * stepX + sampleMin));
             float y = evaluateFunction(function, x, z);
-            //float y = evaluateFunction(function, x, z);
             (*newRow)[index++].setPosition(QVector3D(x, y, z));
         }
         *dataArray << newRow;
@@ -222,11 +221,11 @@ void SurfaceGraph::computeHessian()
     }
 }
 
-float SurfaceGraph::evaluateFunction(QString function, float x, float z)
+double SurfaceGraph::evaluateFunction(QString function, double x, double z)
 {
     QJSValueList args;
     args << x << z;
-    float y = m_functionToEvaluateFunction[function].call(args).toNumber();
+    double y = m_functionToEvaluateFunction[function].call(args).toNumber();
     return y;
 }
 
@@ -547,6 +546,10 @@ void SurfaceGraph::setCostFunction(int function)
         }
         case MainWindow::WideSaddle: {
             arithmeticExpression = "x ** 4 - z ** 4";
+            break;
+        }
+        case MainWindow::Slide: {
+            arithmeticExpression = "- x ** 2 + z ** 3";
             break;
         }
         default:

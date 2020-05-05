@@ -9,10 +9,12 @@ NewtonRegularized::NewtonRegularized()
     m_hyperParameterToValue = m_hyperParameterToDefaultValue;
 }
 
-Vector2d NewtonRegularized::updateRule(Vector2d wHat, Vector2d g, Matrix2d H, Matrix2d I, float lamb)
+Vector2d NewtonRegularized::updateRule(Vector2d wHat, Vector2d g, Matrix2d H, Matrix2d I, double lamb)
 {
     Matrix2d temp = H + lamb * I;
-    Vector2d direction = temp.inverse() * g;
+    Vector2d direction = temp.colPivHouseholderQr().solve(g); // <=> temp.inverse() * g
+    // See comparative table here : https://eigen.tuxfamily.org/dox/group__TutorialLinearAlgebra.html
+    // for solving techniques
     wHat -= direction;
     return wHat;
 }
@@ -21,7 +23,7 @@ vector<QVector3D> NewtonRegularized::run()
 {
     int k = 1;
 
-    float tol = m_hyperParameterToValue["tol"];
+    double tol = m_hyperParameterToValue["tol"];
     int nIterMax  = (int)m_hyperParameterToValue["nIterMax"];
 
     bool prematureStop = false;
@@ -29,8 +31,8 @@ vector<QVector3D> NewtonRegularized::run()
     // unsync the I/O of C and C++.
     ios_base::sync_with_stdio(false);
 
-    float lamb = sqrt(numeric_limits<float>::epsilon());
-    lamb = 1e-16;
+    double lamb = sqrt(numeric_limits<double>::epsilon());
+
     Matrix2d I = MatrixXd::Identity(2, 2);
     Vector2d g;
     Matrix2d H;
@@ -59,7 +61,9 @@ vector<QVector3D> NewtonRegularized::run()
 
         k += 1;
 
-        if (isnan(m_cost) or isinf(m_cost)) {
+        if (isnan((float)m_cost) or isinf((float)m_cost)) {
+            // QVector3D takes float as input so if double value
+            // is too large it will be converted to nan, inf or -inf
             prematureStop = true;
             break;
         }
@@ -69,15 +73,10 @@ vector<QVector3D> NewtonRegularized::run()
     }
 
     high_resolution_clock::time_point end = high_resolution_clock::now();
-    float time_taken = convertTime(start, end);
+    double time_taken = convertTime(start, end);
 
-    m_statisticLabelToValue["Execution time (in seconds)"] = time_taken;
-    m_statisticLabelToValue["xHat"] = m_points.back().x();
-    m_statisticLabelToValue["Last cost value"] = m_points.back().y();
-    m_statisticLabelToValue["zHat"] = m_points.back().z();
-    m_statisticLabelToValue["nIter"] = k - 1;
-    m_statisticLabelToValue["nIterMax"] = nIterMax;
-    m_statisticLabelToValue["Premature stop (inf, -inf or nan)"] = prematureStop;
+    setStatistics(time_taken, m_points.back().x(), m_points.back().y(),
+                  m_points.back().z(), k - 1, nIterMax, prematureStop);
 
     return m_points;
 }

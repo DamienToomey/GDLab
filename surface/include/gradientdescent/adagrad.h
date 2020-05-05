@@ -12,7 +12,7 @@ public:
     virtual QString name();
 
 private:
-    float updateRule(float xHat, float dx, float lr, float& dxSquared);
+    double updateRule(double xHat, double dx, double lr, double& dxSquared);
 };
 
 #endif // ADAGRAD_H

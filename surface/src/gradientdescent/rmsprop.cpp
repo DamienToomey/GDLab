@@ -14,7 +14,7 @@ RMSProp::RMSProp()
     m_hyperParameterToValue = m_hyperParameterToDefaultValue;
 }
 
-float RMSProp::updateRule(float xHat, float dx, float lr, float decayRate, float& dxSquared) {
+double RMSProp::updateRule(double xHat, double dx, double lr, double decayRate, double& dxSquared) {
     dxSquared = decayRate * dxSquared + (1 - decayRate) * dx * dx;
     xHat -= lr * dx / (sqrt(dxSquared) + 1e-7);
     return xHat;
@@ -24,13 +24,13 @@ vector<QVector3D> RMSProp::run()
 {
     int k = 0;
 
-    float lr = m_hyperParameterToValue["lr"];
-    float tol = m_hyperParameterToValue["tol"];
+    double lr = m_hyperParameterToValue["lr"];
+    double tol = m_hyperParameterToValue["tol"];
     int nIterMax  = (int)m_hyperParameterToValue["nIterMax"];
-    float decayRate = m_hyperParameterToValue["decayRate"];
+    double decayRate = m_hyperParameterToValue["decayRate"];
 
-    float dxSquared = 0;
-    float dzSquared = 0;
+    double dxSquared = 0;
+    double dzSquared = 0;
 
     bool prematureStop = false;
     high_resolution_clock::time_point start = high_resolution_clock::now();
@@ -48,7 +48,9 @@ vector<QVector3D> RMSProp::run()
 
         k += 1;
 
-        if (isnan(m_cost) or isinf(m_cost)) {
+        if (isnan((float)m_cost) or isinf((float)m_cost)) {
+            // QVector3D takes float as input so if double value
+            // is too large it will be converted to nan, inf or -inf
             prematureStop = true;
             break;
         }
@@ -58,15 +60,10 @@ vector<QVector3D> RMSProp::run()
     }
 
     high_resolution_clock::time_point end = high_resolution_clock::now();
-    float time_taken = convertTime(start, end);
+    double time_taken = convertTime(start, end);
 
-    m_statisticLabelToValue["Execution time (in seconds)"] = time_taken;
-    m_statisticLabelToValue["xHat"] = m_points.back().x();
-    m_statisticLabelToValue["Last cost value"] = m_points.back().y();
-    m_statisticLabelToValue["zHat"] = m_points.back().z();
-    m_statisticLabelToValue["nIter"] = k - 1;
-    m_statisticLabelToValue["nIterMax"] = nIterMax;
-    m_statisticLabelToValue["Premature stop (inf, -inf or nan)"] = prematureStop;
+    setStatistics(time_taken, m_points.back().x(), m_points.back().y(),
+                  m_points.back().z(), k - 1, nIterMax, prematureStop);
 
     return m_points;
 }

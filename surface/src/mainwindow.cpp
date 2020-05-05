@@ -257,6 +257,7 @@ void MainWindow::initializeRightVLayout(QVBoxLayout *rightVLayout)
     m_costFunctionList->addItem(tr("Narrow Saddle"));
     m_costFunctionList->addItem(tr("NonConvex"));
     m_costFunctionList->addItem(tr("Wide Saddle"));
+    m_costFunctionList->addItem(tr("Slide"));
     costFunctionVBox->addWidget(m_costFunctionList);
 
     m_functionToLineEdit["f"] = new QLineEdit(m_widget);

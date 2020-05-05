@@ -7,13 +7,7 @@ GradientDescent::GradientDescent()
     setId(static_id);
     static_id++;
 
-    m_statisticLabelToValue["Execution time (in seconds)"] = 0;
-    m_statisticLabelToValue["xHat"] = 0;
-    m_statisticLabelToValue["Last cost value"] = 0;
-    m_statisticLabelToValue["zHat"] = 0;
-    m_statisticLabelToValue["nIter"] = 0;
-    m_statisticLabelToValue["nIterMax"] = 0;
-    m_statisticLabelToValue["Premature stop (inf, -inf or nan)"] = 0;
+    setStatistics(0, 0, 0, 0, 0, 0, 0);
 }
 
 void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializationPoint)
@@ -33,37 +27,37 @@ void GradientDescent::initialize(SurfaceGraph *modifier, QVector3D initializatio
     m_dz = 1; // partial derivative (gradient in Deep Learning)
 }
 
-float GradientDescent::evaluateF(float xHat, float zHat)
+double GradientDescent::evaluateF(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("f", xHat, zHat);
 }
 
-float GradientDescent::evaluateDx(float xHat, float zHat)
+double GradientDescent::evaluateDx(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("dx", xHat, zHat);
 }
 
-float GradientDescent::evaluateDz(float xHat, float zHat)
+double GradientDescent::evaluateDz(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("dz", xHat, zHat);
 }
 
-float GradientDescent::evaluateDxdx(float xHat, float zHat)
+double GradientDescent::evaluateDxdx(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("dxdx", xHat, zHat);
 }
 
-float GradientDescent::evaluateDxdz(float xHat, float zHat)
+double GradientDescent::evaluateDxdz(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("dxdz", xHat, zHat);
 }
 
-float GradientDescent::evaluateDzdx(float xHat, float zHat)
+double GradientDescent::evaluateDzdx(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("dzdx", xHat, zHat);
 }
 
-float GradientDescent::evaluateDzdz(float xHat, float zHat)
+double GradientDescent::evaluateDzdz(double xHat, double zHat)
 {
     return m_modifier->evaluateFunction("dzdz", xHat, zHat);
 }
@@ -89,17 +83,17 @@ GradientDescent::~GradientDescent()
     delete m_modifier;
 }
 
-void GradientDescent::setHyperParameterValue(QString hyperParameter, float value)
+void GradientDescent::setHyperParameterValue(QString hyperParameter, double value)
 {
     m_hyperParameterToValue[hyperParameter] = value;
 }
 
-float GradientDescent::hyperParameterValue(QString hyperParameter)
+double GradientDescent::hyperParameterValue(QString hyperParameter)
 {
     return m_hyperParameterToValue[hyperParameter];
 }
 
-float GradientDescent::hyperParameterDefaultValue(QString hyperParameter)
+double GradientDescent::hyperParameterDefaultValue(QString hyperParameter)
 {
     return m_hyperParameterToDefaultValue[hyperParameter];
 }
@@ -127,7 +121,7 @@ vector<QString> GradientDescent::hyperParameters()
     // These previous lines are not nice but they allow the spinbox to appear in the
     // same order for each Gradient Descent Method
 
-    map<QString, float>::iterator it;
+    map<QString, double>::iterator it;
     for (it = m_hyperParameterToDefaultValue.begin(); it != m_hyperParameterToDefaultValue.end(); ++it) {
         if (it->first != "lr" && it->first != "nIterMax" && it->first != "tol") {
             tab[i] = it->first;
@@ -138,20 +132,31 @@ vector<QString> GradientDescent::hyperParameters()
     return tab;
 }
 
-map<QString, float> GradientDescent::statisticLabelToValue()
+map<QString, double> GradientDescent::statisticLabelToValue()
 {
     return m_statisticLabelToValue;
 }
 
-float GradientDescent::convertTime(high_resolution_clock::time_point start,
+double GradientDescent::convertTime(high_resolution_clock::time_point start,
                                    high_resolution_clock::time_point end)
 {
     // Calculating total time taken by the program.
-    double time_taken = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    double time_taken = chrono::duration_cast<nanoseconds>(end - start).count();
     time_taken *= 1e-9;
     return time_taken;
 }
 
 bool GradientDescent::hessianIsNecessary() {
     return false;
+}
+
+void GradientDescent::setStatistics(double executionTime, double xHat, double lastCostValue,
+                                    double zHat, int nIter, int nIterMax, bool prematureStop) {
+    m_statisticLabelToValue["Execution time (in seconds)"] = executionTime;
+    m_statisticLabelToValue["xHat"] = xHat;
+    m_statisticLabelToValue["Last cost value"] = lastCostValue;
+    m_statisticLabelToValue["zHat"] = zHat;
+    m_statisticLabelToValue["nIter"] = nIter;
+    m_statisticLabelToValue["nIterMax"] = nIterMax;
+    m_statisticLabelToValue["Premature stop (inf, -inf or nan)"] = prematureStop;
 }

@@ -12,7 +12,7 @@ public:
     virtual QString name();
 
 private:
-    float updateRule(float xHat, float dx, float lr, float rho, float& vx);
+    double updateRule(double xHat, double dx, double lr, double rho, double& vx);
 };
 
 #endif // NESTEROVMOMENTUM_H

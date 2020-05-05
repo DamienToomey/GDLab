@@ -16,7 +16,7 @@ public:
     virtual bool hessianIsNecessary();
 
 private:
-    Vector2d updateRule(Vector2d wHat, Vector2d g, Matrix2d H,  Matrix2d I, float lamb);
+    Vector2d updateRule(Vector2d wHat, Vector2d g, Matrix2d H,  Matrix2d I, double lamb);
 };
 
 #endif // NEWTON_H

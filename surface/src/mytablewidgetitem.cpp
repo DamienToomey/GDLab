@@ -16,6 +16,6 @@ bool MyTableWidgetItem::operator<(const QTableWidgetItem &other) const {
     if (other.row() == 0) { // do not sort row 0 which contains labels
         return false;
     }
-    return text().toFloat() < other.text().toFloat();
+    return text().toDouble() < other.text().toDouble();
     //return QTableWidgetItem::operator<(other);
 }

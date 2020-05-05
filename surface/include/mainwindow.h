@@ -48,7 +48,8 @@ class MainWindow : public QWidget
 public:
     explicit MainWindow(Q3DSurface *graph, QWidget *container);
     ~MainWindow();
-    enum Functions { InclinedTacoShell = 0, SqrtSin = 1, NarrowSaddle = 2, NonConvex = 3, WideSaddle = 4 };
+    enum Functions { InclinedTacoShell = 0, SqrtSin = 1, NarrowSaddle = 2,
+                     NonConvex = 3, WideSaddle = 4, Slide = 5 };
     enum Views { Surface3D = 0, RowSlice = 1, ColumnSlice = 2 };
     QLineEdit* dfdxLineEdit();
     QLineEdit* dfdzLineEdit();

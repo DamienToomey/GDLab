@@ -18,38 +18,40 @@ public:
     virtual QColor color() = 0;
     virtual QString name() = 0;
     virtual bool hessianIsNecessary();
-    void setHyperParameterValue(QString hyperParameter, float value);
-    float hyperParameterValue(QString hyperParameter);
+    void setStatistics(double executionTime, double xHat, double lastCostValue,
+                       double zHat, int nIter, int nIterMax, bool prematureStop);
+    void setHyperParameterValue(QString hyperParameter, double value);
+    double hyperParameterValue(QString hyperParameter);
     void initialize(SurfaceGraph *modifier, QVector3D selectedPoint);
-    float evaluateF(float xHat, float zHat);
-    float evaluateDx(float xHat, float zHat);
-    float evaluateDz(float xHat, float zHat);
+    double evaluateF(double xHat, double zHat);
+    double evaluateDx(double xHat, double zHat);
+    double evaluateDz(double xHat, double zHat);
     int id();    
     vector<QVector3D> points();
-    float hyperParameterDefaultValue(QString hyperParameter);
+    double hyperParameterDefaultValue(QString hyperParameter);
     vector<QString> hyperParameters();
-    map<QString, float> statisticLabelToValue();
-    float evaluateDxdx(float xHat, float zHat);
-    float evaluateDxdz(float xHat, float zHat);
-    float evaluateDzdx(float xHat, float zHat);
-    float evaluateDzdz(float xHat, float zHat);
+    map<QString, double> statisticLabelToValue();
+    double evaluateDxdx(double xHat, double zHat);
+    double evaluateDxdz(double xHat, double zHat);
+    double evaluateDzdx(double xHat, double zHat);
+    double evaluateDzdz(double xHat, double zHat);
 
 protected:
-    float m_xHat;
-    float m_zHat;
-    float m_dx;
-    float m_dz;
-    float m_dxdx;
-    float m_dxdz;
-    float m_dzdx;
-    float m_dzdz;
-    float m_cost;
+    double m_xHat;
+    double m_zHat;
+    double m_dx;
+    double m_dz;
+    double m_dxdx;
+    double m_dxdz;
+    double m_dzdx;
+    double m_dzdz;
+    double m_cost;
     int m_id;
     vector<QVector3D> m_points;
-    map<QString, float> m_hyperParameterToValue;
-    map<QString, float> m_hyperParameterToDefaultValue;
-    map<QString, float> m_statisticLabelToValue;
-    float convertTime(high_resolution_clock::time_point start, high_resolution_clock::time_point end);
+    map<QString, double> m_hyperParameterToValue;
+    map<QString, double> m_hyperParameterToDefaultValue;
+    map<QString, double> m_statisticLabelToValue;
+    double convertTime(high_resolution_clock::time_point start, high_resolution_clock::time_point end);
 
 private:
     static int static_id;

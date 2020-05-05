@@ -93,7 +93,7 @@ public:
     bool gradientIsComputed();
     bool hessianIsComputed();
     QJSValue initializeJSEngine(QString module, QString property);
-    float evaluateFunction(QString function, float x, float z);
+    double evaluateFunction(QString function, double x, double z);
 
 public Q_SLOTS:
     Q3DSurface* graph();

@@ -13,7 +13,7 @@ ResultWindow::ResultWindow(MainWindow *mainWindow, QWidget *parent = 0)
     m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers); // table in read mode only
     m_tableWidget->resizeColumnsToContents();
     m_tableWidget->resizeRowsToContents();
-    m_tableWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+
 
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addWidget(m_tableWidget);
@@ -27,6 +27,9 @@ ResultWindow::ResultWindow(MainWindow *mainWindow, QWidget *parent = 0)
     copyTableAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
     connect(copyTableAction, SIGNAL(triggered()), this, SLOT(copyTable()));
     m_tableWidget->addAction(copyTableAction);
+
+    m_tableWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    m_tableWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
 
     show();
 }
@@ -48,14 +51,14 @@ void ResultWindow::initializeTable()
     m_tableWidget->setRowCount(size+1); // number of gradient descent methods
 
     it = gradientDescentMethodToGradientDescent.begin();
-    map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
+    map<QString, double> statisticLabelToValue = it->second->statisticLabelToValue();
     m_tableWidget->setColumnCount(statisticLabelToValue.size()+1); // number of statistics
 
 
     MyTableWidgetItem *newItem = new MyTableWidgetItem(QString(""));
     m_tableWidget->setItem(0, 0, newItem);
 
-    map<QString, float>::iterator ite;
+    map<QString, double>::iterator ite;
     int row = 1;
     int costValueColumn;
     for (it = gradientDescentMethodToGradientDescent.begin(); it != gradientDescentMethodToGradientDescent.end(); ++it) {
@@ -64,7 +67,7 @@ void ResultWindow::initializeTable()
             newItem = new MyTableWidgetItem(it->second->name());
             m_tableWidget->setItem(row, 0, newItem);
 
-            map<QString, float> statisticLabelToValue = it->second->statisticLabelToValue();
+            map<QString, double> statisticLabelToValue = it->second->statisticLabelToValue();
             for (ite = statisticLabelToValue.begin(); ite != statisticLabelToValue.end(); ++ite) {
                 if (ite->first.contains("cost")) {
                     costValueColumn = column;

@@ -12,7 +12,7 @@ public:
     virtual QString name();
 
 private:
-    float updateRule(float xHat, float dx, float lr, float decayRate, float& dxSquared);
+    double updateRule(double xHat, double dx, double lr, double decayRate, double& dxSquared);
 };
 
 #endif // RMSPROP_H

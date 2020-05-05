@@ -16,13 +16,13 @@ Adam::Adam()
     m_hyperParameterToValue = m_hyperParameterToDefaultValue;
 }
 
-float Adam::updateRule(float xHat, float dx, float lr, float beta1, float beta2,
-                       float& firstMoment, float& secondMoment, int k)
+double Adam::updateRule(double xHat, double dx, double lr, double beta1, double beta2,
+                        double& firstMoment, double& secondMoment, int k)
 {
     firstMoment = beta1 * firstMoment + (1 - beta1) * dx;
     secondMoment = beta2 * secondMoment + (1 - beta2) * dx * dx;
-    float firstUnbias = firstMoment / (1 - pow(beta1, k));
-    float secondUnbias = secondMoment / (1 - pow(beta2, k));
+    double firstUnbias = firstMoment / (1 - pow(beta1, k));
+    double secondUnbias = secondMoment / (1 - pow(beta2, k));
     xHat -= lr * firstUnbias / (sqrt(secondUnbias) + 1e-7);
     return xHat;
 }
@@ -31,16 +31,16 @@ vector<QVector3D> Adam::run()
 {
     int k = 1;
 
-    float lr = m_hyperParameterToValue["lr"];
-    float tol = m_hyperParameterToValue["tol"];
+    double lr = m_hyperParameterToValue["lr"];
+    double tol = m_hyperParameterToValue["tol"];
     int nIterMax  = (int)m_hyperParameterToValue["nIterMax"];
-    float beta1 = m_hyperParameterToValue["beta1"];
-    float beta2 = m_hyperParameterToValue["beta2"];
+    double beta1 = m_hyperParameterToValue["beta1"];
+    double beta2 = m_hyperParameterToValue["beta2"];
 
-    float firstMomentX = 0;
-    float secondMomentX = 0;
-    float firstMomentZ = 0;
-    float secondMomentZ = 0;
+    double firstMomentX = 0;
+    double secondMomentX = 0;
+    double firstMomentZ = 0;
+    double secondMomentZ = 0;
 
     bool prematureStop = false;
     high_resolution_clock::time_point start = high_resolution_clock::now();
@@ -60,7 +60,9 @@ vector<QVector3D> Adam::run()
 
         k += 1;
 
-        if (isnan(m_cost) or isinf(m_cost)) {
+        if (isnan((float)m_cost) or isinf((float)m_cost)) {
+            // QVector3D takes float as input so if double value
+            // is too large it will converted to nan, inf or -inf
             prematureStop = true;
             break;
         }
@@ -70,15 +72,10 @@ vector<QVector3D> Adam::run()
     }
 
     high_resolution_clock::time_point end = high_resolution_clock::now();
-    float time_taken = convertTime(start, end);
+    double time_taken = convertTime(start, end);
 
-    m_statisticLabelToValue["Execution time (in seconds)"] = time_taken;
-    m_statisticLabelToValue["xHat"] = m_points.back().x();
-    m_statisticLabelToValue["Last cost value"] = m_points.back().y();
-    m_statisticLabelToValue["zHat"] = m_points.back().z();
-    m_statisticLabelToValue["nIter"] = k - 1;
-    m_statisticLabelToValue["nIterMax"] = nIterMax;
-    m_statisticLabelToValue["Premature stop (inf, -inf or nan)"] = prematureStop;
+    setStatistics(time_taken, m_points.back().x(), m_points.back().y(),
+                  m_points.back().z(), k - 1, nIterMax, prematureStop);
 
     return m_points;
 }
