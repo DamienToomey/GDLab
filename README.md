@@ -14,6 +14,8 @@ Gradient descent is the backbone of Machine Learning/Deep Learning. GDLab is a t
 
 This app is based on [Surface Example](https://doc.qt.io/qt-5/qtdatavisualization-surface-example.html) by Qt.
 
+Qt is a cross-platform library (Linux, Windows, Mac, ...).
+
 ## GDLab GUI
 
 <p align="center">
@@ -139,7 +141,7 @@ You can compare your setup with mine by going to **Tools > Options > Kits** (see
 
 ## Side note
 
-- Bug reports, improvement suggestions and constructive feedback are welcome :) Feel free to open an issue!
+- Bug reports, questions, improvement suggestions and constructive feedback are welcome :) Feel free to open an issue!
 
 ## License
 
