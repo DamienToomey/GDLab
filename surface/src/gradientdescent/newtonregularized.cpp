@@ -83,7 +83,7 @@ vector<QVector3D> NewtonRegularized::run()
 
 QColor NewtonRegularized::color()
 {
-    return Qt::yellow;
+    return QColor(255, 165, 0); // orange
 }
 
 

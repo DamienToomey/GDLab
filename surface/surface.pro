@@ -2,9 +2,7 @@ android|ios|winrt {
     error( "This example is not supported for android, ios, or winrt." )
 }
 
-!include( ../examples.pri ) {
-    error( "Couldn't find the examples.pri file!" )
-}
+INCLUDEPATH += include
 
 SOURCES += src/main.cpp \
     src/gradientdescent/adagrad.cpp \
@@ -34,10 +32,10 @@ HEADERS += include/surfacegraph.h \
     include/tinycolormap.hpp \
     include/gradientdescent/vanillagradientdescent.h
 
-QT += widgets qml
+QT += widgets qml datavisualization
 requires(qtConfig(combobox))
 
 RESOURCES += surface.qrc
 
-OTHER_FILES += doc/src/* \
-               doc/images/*
+#OTHER_FILES += doc/src/* \
+#               doc/images/*
