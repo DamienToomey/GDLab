@@ -79,3 +79,7 @@ QString GradientDescentWithMomentum::name()
 {
     return "GD With Momentum";
 }
+
+bool GradientDescentWithMomentum::hessianIsNecessary() {
+    return false;
+}

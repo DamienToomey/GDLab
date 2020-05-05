@@ -80,3 +80,7 @@ QString NesterovMomentum::name()
 {
     return "Nesterov Momentum";
 }
+
+bool NesterovMomentum::hessianIsNecessary() {
+    return false;
+}

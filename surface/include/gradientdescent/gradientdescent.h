@@ -17,7 +17,7 @@ public:
     virtual vector<QVector3D> run() = 0;
     virtual QColor color() = 0;
     virtual QString name() = 0;
-    virtual bool hessianIsNecessary();
+    virtual bool hessianIsNecessary() = 0;
     void setStatistics(double executionTime, double xHat, double lastCostValue,
                        double zHat, int nIter, int nIterMax, bool prematureStop);
     void setHyperParameterValue(QString hyperParameter, double value);

@@ -90,3 +90,7 @@ QString Adam::name()
 {
     return "Adam";
 }
+
+bool Adam::hessianIsNecessary() {
+    return false;
+}

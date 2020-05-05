@@ -69,3 +69,7 @@ QString VanillaGradientDescent::name()
 {
     return "Vanilla GD";
 }
+
+bool VanillaGradientDescent::hessianIsNecessary() {
+    return false;
+}

@@ -74,3 +74,7 @@ QString AdaGrad::name()
 {
     return "AdaGrad";
 }
+
+bool AdaGrad::hessianIsNecessary() {
+    return false;
+}

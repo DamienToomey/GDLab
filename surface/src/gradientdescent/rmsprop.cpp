@@ -78,3 +78,7 @@ QString RMSProp::name()
 {
     return "RMSProp";
 }
+
+bool RMSProp::hessianIsNecessary() {
+    return false;
+}

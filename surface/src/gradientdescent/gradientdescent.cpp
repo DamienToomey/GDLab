@@ -146,10 +146,6 @@ double GradientDescent::convertTime(high_resolution_clock::time_point start,
     return time_taken;
 }
 
-bool GradientDescent::hessianIsNecessary() {
-    return false;
-}
-
 void GradientDescent::setStatistics(double executionTime, double xHat, double lastCostValue,
                                     double zHat, int nIter, int nIterMax, bool prematureStop) {
     m_statisticLabelToValue["Execution time (in seconds)"] = executionTime;
