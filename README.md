@@ -41,7 +41,7 @@ Qt is a cross-platform library (Linux, Windows, Mac, ...).
     - Gradient Descent With Momentum
     - Nesterov Momentum
     - Adagrad
-    - RMSprop
+    - RMSProp
     - Adam
     - Newton regularized
 - Observe paths taken by the different gradient descent methods
